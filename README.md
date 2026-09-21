@@ -66,6 +66,9 @@ If connector names differ, inspect them with `swaymsg -t get_outputs` and update
 - Calculator: opens floating.
 - Waybar: bottom, 30 px, seconds visible, square workspace indicators.
 - Swaylock: uses `walls/burning-earth.png`.
+- Notifications: `Super+N` toggles SwayNC.
+- Clipboard: `Super+Shift+V` opens text and image history; persistent user services collect new copies.
+- Screenshots: `Super+Shift+S` selects an area and copies it to the clipboard.
 - tmux prefix: `Ctrl+Space`; the session chip changes from yellow to purple while the prefix is active.
 - Special Sway mode: `Super+Z`, then `c` copies a picked color, `s` copies a selected screenshot, and `a` saves an output screenshot.
 - Shell tools: `ls`/`ll`/`la`/`lt` use `eza`, `cat` uses `bat`, and `rgf` lists files with `ripgrep`.

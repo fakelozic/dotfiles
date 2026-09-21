@@ -1,0 +1,13 @@
+[Unit]
+Description=Store text clipboard history for cliphist
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/wl-paste --type text --watch /usr/bin/cliphist store
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=graphical-session.target

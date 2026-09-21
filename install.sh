@@ -67,12 +67,15 @@ fi
 required_files=(
   alacritty/alacritty.toml
   rofi/config.rasi
+  scripts/cliphist-rofi
   sway/config
   sway/config.d/95-gruvbox-rice.conf
   sway/environment
   swaylock/config
   swaync/config.json
   swaync/style.css
+  systemd/user/cliphist-image.service
+  systemd/user/cliphist-text.service
   tmux/tmux.conf
   tmux/gruvbox-theme.conf
   walls/burning-earth.png
@@ -211,8 +214,11 @@ install_dotfiles() {
     "${config_root}/sway"
     "${config_root}/swaylock"
     "${config_root}/swaync"
+    "${config_root}/systemd/user/cliphist-image.service"
+    "${config_root}/systemd/user/cliphist-text.service"
     "${config_root}/tmux"
     "${config_root}/waybar"
+    "${target_home}/.local/bin/cliphist-rofi"
     "${target_home}/.zshrc"
     "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
   )
@@ -224,12 +230,15 @@ install_dotfiles() {
 
   install_file "${repo_root}/alacritty/alacritty.toml" "${config_root}/alacritty/alacritty.toml"
   install_file "${repo_root}/rofi/config.rasi" "${config_root}/rofi/config.rasi"
+  install -Dm0755 -- "${repo_root}/scripts/cliphist-rofi" "${target_home}/.local/bin/cliphist-rofi"
   install_file "${repo_root}/sway/config" "${config_root}/sway/config"
   install_file "${repo_root}/sway/config.d/95-gruvbox-rice.conf" "${config_root}/sway/config.d/95-gruvbox-rice.conf"
   install_file "${repo_root}/swaylock/config" "${config_root}/swaylock/config"
   sed -i "s|^image=.*|image=${target_home}/walls/burning-earth.png|" "${config_root}/swaylock/config"
   install_file "${repo_root}/swaync/config.json" "${config_root}/swaync/config.json"
   install_file "${repo_root}/swaync/style.css" "${config_root}/swaync/style.css"
+  install_file "${repo_root}/systemd/user/cliphist-image.service" "${config_root}/systemd/user/cliphist-image.service"
+  install_file "${repo_root}/systemd/user/cliphist-text.service" "${config_root}/systemd/user/cliphist-text.service"
   install_file "${repo_root}/tmux/tmux.conf" "${config_root}/tmux/tmux.conf"
   install_file "${repo_root}/tmux/gruvbox-theme.conf" "${config_root}/tmux/gruvbox-theme.conf"
   install_file "${repo_root}/waybar/config.jsonc" "${config_root}/waybar/config.jsonc"
@@ -264,8 +273,12 @@ configure_session() {
   fi
 
   # Waybar is launched by Fedora's Sway config. A user service would duplicate it.
+  systemctl --user daemon-reload
   systemctl --user disable --now waybar.service >/dev/null 2>&1 || true
-  systemctl --user enable --now swaync.service >/dev/null 2>&1 || true
+  systemctl --user enable --now \
+    swaync.service \
+    cliphist-text.service \
+    cliphist-image.service >/dev/null 2>&1 || true
 }
 
 reload_session() {

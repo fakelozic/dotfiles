@@ -108,6 +108,9 @@ bindsym --no-repeat $mod+Shift+q kill
 # Start your launcher
 bindsym $mod+d exec $menu
 
+# Open the notification center.
+bindsym --no-repeat $mod+n exec swaync-client --toggle-panel
+
 # Drag floating windows by holding down $mod and left mouse button.
 # Resize them with right mouse button + $mod.
 # Despite the name, also works for non-floating windows.
@@ -243,7 +246,10 @@ mode "resize" {
 	bindsym Escape mode "default"
 }
 bindsym $mod+r mode "resize"
-bindsym $mod+Shift+v exec cliphist list | rofi -dmenu | cliphist decode | wl-copy
+bindsym --no-repeat $mod+Shift+v exec $HOME/.local/bin/cliphist-rofi
+
+# Select an area, copy it to the clipboard, and open no extra UI afterward.
+bindsym --no-repeat $mod+Shift+s exec slurp | grim -g - - | wl-copy
 
 mode "special" {
   bindsym c exec grimpicker | wl-copy; mode "default"

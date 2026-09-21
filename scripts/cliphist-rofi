@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+selection="$(
+  cliphist list |
+    rofi -dmenu -i -no-custom -display-columns 2 -p 'Clipboard'
+)" || exit 0
+
+[[ -n $selection ]] || exit 0
+printf '%s' "$selection" | cliphist decode | wl-copy
