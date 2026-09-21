@@ -1,12 +1,33 @@
-# The defaults below could be overridden in $XDG_CONFIG_HOME/swaylock/config
-#  (~/.config/swaylock/config).
-#
-# Image path supports environment variables and shell expansions,
-# e.g. image=$HOME/Pictures/default.png
-image=~/walls/orbit.png
+# Gruvbox lock screen: same wallpaper and palette as the desktop.
+image=~/walls/burning-earth.png
 scaling=fill
-indicator-radius=100
-indicator-thickness=10
-ring-color=34bdeb
-inside-color=00000088
-show-failed-attemepts
+color=1d2021
+font=JetBrainsMono Nerd Font
+font-size=22
+indicator-radius=70
+indicator-thickness=6
+ring-color=d79921
+ring-clear-color=fe8019
+ring-caps-lock-color=d3869b
+ring-ver-color=83a598
+ring-wrong-color=fb4934
+inside-color=1d2021ee
+inside-clear-color=1d2021ee
+inside-caps-lock-color=1d2021ee
+inside-ver-color=1d2021ee
+inside-wrong-color=1d2021ee
+line-uses-inside
+key-hl-color=b8bb26
+bs-hl-color=fe8019
+caps-lock-key-hl-color=d3869b
+caps-lock-bs-hl-color=fe8019
+separator-color=1d2021
+text-color=ebdbb2
+text-clear-color=ebdbb2
+text-caps-lock-color=d3869b
+text-ver-color=ebdbb2
+text-wrong-color=fb4934
+layout-bg-color=1d2021
+layout-border-color=504945
+layout-text-color=ebdbb2
+show-failed-attempts

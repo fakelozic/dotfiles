@@ -1,0 +1,58 @@
+@import url("/etc/xdg/swaync/style.css");
+
+:root {
+  --cc-bg: #1d2021;
+  --noti-border-color: #504945;
+  --noti-bg: 40, 40, 40;
+  --noti-bg-alpha: 1;
+  --noti-bg-darker: #1d2021;
+  --noti-bg-hover: #3c3836;
+  --noti-bg-focus: #504945;
+  --noti-close-bg: #3c3836;
+  --noti-close-bg-hover: #504945;
+  --text-color: #ebdbb2;
+  --text-color-disabled: #a89984;
+  --bg-selected: #d79921;
+  --border-radius: 0px;
+  --notification-icon-size: 40px;
+  --font-size-body: 14px;
+  --font-size-summary: 14px;
+  --notification-shadow: none;
+}
+
+@define-color cc-bg #1d2021;
+@define-color noti-border-color #504945;
+@define-color noti-bg #282828;
+@define-color noti-bg-opaque #282828;
+@define-color noti-bg-darker #1d2021;
+@define-color noti-bg-hover #3c3836;
+@define-color noti-bg-hover-opaque #3c3836;
+@define-color noti-bg-focus #504945;
+@define-color noti-close-bg #3c3836;
+@define-color noti-close-bg-hover #504945;
+@define-color text-color #ebdbb2;
+@define-color text-color-disabled #a89984;
+@define-color bg-selected #d79921;
+
+* { font-family: "JetBrainsMono Nerd Font"; }
+.control-center { border: 1px solid #504945; border-radius: 0; }
+.control-center-list { background: transparent; }
+.notification, .notification-default-action, .notification-action,
+.close-button, .widget-title > button, .widget-dnd > switch,
+.widget-dnd > switch > slider { border-radius: 0; }
+.widget-title { color: #fabd2f; font-size: 17px; }
+.widget-title > button { background: #3c3836; color: #ebdbb2; }
+.widget-title > button:hover { background: #504945; }
+.widget-dnd { color: #ebdbb2; }
+.widget-dnd > switch { background: #504945; }
+.widget-dnd > switch:checked { background: #d79921; }
+.widget-dnd > switch > slider { background: #ebdbb2; }
+.notification-row .notification-background .notification.critical {
+  border-color: #fb4934;
+}
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .summary {
+  color: #fabd2f;
+}
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .time {
+  color: #a89984; font-size: 12px;
+}
