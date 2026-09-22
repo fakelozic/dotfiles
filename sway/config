@@ -252,7 +252,7 @@ bindsym --no-repeat $mod+Shift+v exec $HOME/.local/bin/cliphist-rofi
 bindsym --no-repeat $mod+Shift+s exec slurp | grim -g - - | wl-copy
 
 mode "special" {
-  bindsym c exec grimpicker | wl-copy; mode "default"
+  bindsym c exec $HOME/.local/bin/pick-color; mode "default"
   bindsym s exec slurp | grim -g - - | wl-copy; mode "default"
   bindsym a exec grim -g "$(slurp -o -f '%x,%y %wx%h')" "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png"; mode "default"
   bindsym Shift+s exec grim -g "$(slurp)" "$HOME/screenshot-$(date +%Y%m%d-%H%M%S).png"; mode "default"
@@ -283,15 +283,7 @@ bindsym $mod+z mode "special"
 # important to make the magic work. And if you want to learn the secret behind
 # the trick, it's all in the `wordexp(3)`.
 #
-default_border pixel 1
-default_floating_border pixel 1
-
-client.focused $yellow $yellow $bg $yellow $yellow
-client.focused_inactive $bg0_h $bg0_h $fg $bg0_h $bg0_h
-client.unfocused $bg0_h $bg0_h $fg $bg0_h $bg0_h
-
-gaps inner 2
-gaps outer 0
+# Borders, colors and gaps live in config.d/95-gruvbox-rice.conf.
 
 seat seat0 xcursor_theme breeze_cursors 24
 

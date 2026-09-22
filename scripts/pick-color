@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+geometry="$(slurp -p)" || exit 0
+[[ -n $geometry ]] || exit 0
+color="$(grim -g "$geometry" - | magick png:- -depth 8 -format '#%[hex:p{0,0}]' info:)"
+printf '%s' "$color" | wl-copy

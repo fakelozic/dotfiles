@@ -68,6 +68,7 @@ required_files=(
   alacritty/alacritty.toml
   rofi/config.rasi
   scripts/cliphist-rofi
+  scripts/pick-color
   sway/config
   sway/config.d/95-gruvbox-rice.conf
   sway/environment
@@ -106,7 +107,7 @@ install_packages() {
     git-core
     gnome-calculator
     grim
-    grimpicker
+    ImageMagick
     jq
     lxqt-policykit
     neovim
@@ -219,6 +220,7 @@ install_dotfiles() {
     "${config_root}/tmux"
     "${config_root}/waybar"
     "${target_home}/.local/bin/cliphist-rofi"
+    "${target_home}/.local/bin/pick-color"
     "${target_home}/.zshrc"
     "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
   )
@@ -231,6 +233,7 @@ install_dotfiles() {
   install_file "${repo_root}/alacritty/alacritty.toml" "${config_root}/alacritty/alacritty.toml"
   install_file "${repo_root}/rofi/config.rasi" "${config_root}/rofi/config.rasi"
   install -Dm0755 -- "${repo_root}/scripts/cliphist-rofi" "${target_home}/.local/bin/cliphist-rofi"
+  install -Dm0755 -- "${repo_root}/scripts/pick-color" "${target_home}/.local/bin/pick-color"
   install_file "${repo_root}/sway/config" "${config_root}/sway/config"
   install_file "${repo_root}/sway/config.d/95-gruvbox-rice.conf" "${config_root}/sway/config.d/95-gruvbox-rice.conf"
   install_file "${repo_root}/swaylock/config" "${config_root}/swaylock/config"
@@ -278,7 +281,14 @@ configure_session() {
   systemctl --user enable --now \
     swaync.service \
     cliphist-text.service \
-    cliphist-image.service >/dev/null 2>&1 || true
+    cliphist-image.service
+  for service in swaync.service cliphist-text.service cliphist-image.service; do
+    if ! systemctl --user is-active --quiet "$service"; then
+      printf 'Service failed to start: %s\n' "$service" >&2
+      systemctl --user --no-pager status "$service" >&2 || true
+      return 1
+    fi
+  done
 }
 
 reload_session() {
