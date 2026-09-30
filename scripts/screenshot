@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+mode="${1:-clipboard}"
+case "$mode" in
+  clipboard|area) geometry="$(slurp)" || exit 0 ;;
+  output) geometry="$(slurp -o -f '%x,%y %wx%h')" || exit 0 ;;
+  *) printf 'Usage: screenshot [clipboard|area|output]\n' >&2; exit 2 ;;
+esac
+[[ -n $geometry ]] || exit 0
+
+capture_file="$(mktemp "${TMPDIR:-/tmp}/dotfiles-screenshot-XXXXXX")"
+trap 'rm -f -- "$capture_file"' EXIT
+grim -t png -g "$geometry" "$capture_file"
+if [[ ! -s $capture_file ]]; then
+  printf 'Screenshot capture produced no image.\n' >&2
+  exit 1
+fi
+
+case "$mode" in
+  clipboard) wl-copy --type image/png < "$capture_file" ;;
+  area|output)
+    if [[ $mode == output ]]; then
+      destination_dir="$HOME/Pictures/Screenshots"
+    else
+      destination_dir="$HOME"
+    fi
+    mkdir -p -- "$destination_dir"
+    mv -- "$capture_file" "${destination_dir}/screenshot-$(date +%Y%m%d-%H%M%S-%N).png"
+    ;;
+esac

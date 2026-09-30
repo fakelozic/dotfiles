@@ -249,13 +249,13 @@ bindsym $mod+r mode "resize"
 bindsym --no-repeat $mod+Shift+v exec $HOME/.local/bin/cliphist-rofi
 
 # Select an area, copy it to the clipboard, and open no extra UI afterward.
-bindsym --no-repeat $mod+Shift+s exec slurp | grim -g - - | wl-copy
+bindsym --no-repeat $mod+Shift+s exec "$HOME/.local/bin/screenshot" clipboard
 
 mode "special" {
   bindsym c exec $HOME/.local/bin/pick-color; mode "default"
-  bindsym s exec slurp | grim -g - - | wl-copy; mode "default"
-  bindsym a exec grim -g "$(slurp -o -f '%x,%y %wx%h')" "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png"; mode "default"
-  bindsym Shift+s exec grim -g "$(slurp)" "$HOME/screenshot-$(date +%Y%m%d-%H%M%S).png"; mode "default"
+  bindsym s exec "$HOME/.local/bin/screenshot" clipboard; mode "default"
+  bindsym a exec "$HOME/.local/bin/screenshot" output; mode "default"
+  bindsym Shift+s exec "$HOME/.local/bin/screenshot" area; mode "default"
   bindsym Return mode "default"
   bindsym Escape mode "default"
 }

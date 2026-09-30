@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+missing=()
+for tool in nvim cc tree-sitter node npm make unzip curl tar; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    missing+=("$tool")
+  fi
+done
+if ((${#missing[@]})); then
+  printf 'Missing editor prerequisites: %s\n' "${missing[*]}" >&2
+  printf 'Install them with: sudo dnf install neovim gcc tree-sitter-cli nodejs npm make unzip curl tar\n' >&2
+  exit 1
+fi
+
+version_at_least() {
+  local output="$1" minimum="$2"
+  local major minor patch required_major required_minor required_patch
+  [[ $output =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]] || return 1
+  major="${BASH_REMATCH[1]}"
+  minor="${BASH_REMATCH[2]}"
+  patch="${BASH_REMATCH[3]}"
+  IFS=. read -r required_major required_minor required_patch <<< "$minimum"
+  ((major > required_major ||
+    (major == required_major && minor > required_minor) ||
+    (major == required_major && minor == required_minor && patch >= required_patch)))
+}
+
+nvim_version="$(nvim --version)"
+tree_sitter_version="$(tree-sitter --version)"
+if ! version_at_least "$nvim_version" 0.12.0; then
+  printf 'Neovim 0.12.0 or later is required by the pinned Treesitter plugin.\n' >&2
+  exit 1
+fi
+if ! version_at_least "$tree_sitter_version" 0.26.1; then
+  printf 'tree-sitter-cli 0.26.1 or later is required by the pinned Treesitter plugin.\n' >&2
+  exit 1
+fi
+printf 'Editor prerequisites passed (Neovim >= 0.12.0, tree-sitter-cli >= 0.26.1).\n'

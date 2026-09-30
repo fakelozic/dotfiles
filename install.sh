@@ -12,7 +12,7 @@ else
   state_root="${XDG_STATE_HOME:-${target_home}/.local/state}"
 fi
 timestamp="$(date +%Y%m%d-%H%M%S)"
-backup_root="${state_root}/dotfiles-backups/${timestamp}"
+backup_root=""
 download_temp_dir=""
 
 cleanup() {
@@ -71,6 +71,8 @@ required_files=(
   scripts/cliphist-rofi
   scripts/pick-color
   scripts/power-menu
+  scripts/screenshot
+  scripts/check-editor-deps
   sway/config
   sway/config.d/95-gruvbox-rice.conf
   sway/environment
@@ -107,13 +109,17 @@ install_packages() {
     curl
     eza
     fontconfig
+    gcc
     git-core
     gnome-calculator
     grim
     ImageMagick
     jq
     lxqt-policykit
+    make
     neovim
+    nodejs
+    npm
     NetworkManager-tui
     pavucontrol
     pciutils
@@ -127,7 +133,10 @@ install_packages() {
     swayidle
     swaylock
     SwayNotificationCenter
+    tar
     tmux
+    tree-sitter-cli
+    unzip
     vim-enhanced
     waybar
     wireplumber
@@ -226,10 +235,17 @@ install_dotfiles() {
     "${target_home}/.local/bin/cliphist-rofi"
     "${target_home}/.local/bin/pick-color"
     "${target_home}/.local/bin/power-menu"
+    "${target_home}/.local/bin/screenshot"
     "${target_home}/.vimrc"
     "${target_home}/.zshrc"
     "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
+    "${target_home}/walls/burning-earth.png"
+    "${target_home}/walls/wall.png"
+    "${target_home}/walls/wallg.png"
   )
+
+  mkdir -p -- "${state_root}/dotfiles-backups"
+  backup_root="$(mktemp -d "${state_root}/dotfiles-backups/${timestamp}-XXXXXX")"
 
   printf 'Backing up existing configuration to %s\n' "$backup_root"
   for target in "${backup_targets[@]}"; do
@@ -242,6 +258,7 @@ install_dotfiles() {
   install -Dm0755 -- "${repo_root}/scripts/cliphist-rofi" "${target_home}/.local/bin/cliphist-rofi"
   install -Dm0755 -- "${repo_root}/scripts/pick-color" "${target_home}/.local/bin/pick-color"
   install -Dm0755 -- "${repo_root}/scripts/power-menu" "${target_home}/.local/bin/power-menu"
+  install -Dm0755 -- "${repo_root}/scripts/screenshot" "${target_home}/.local/bin/screenshot"
   install_file "${repo_root}/vim/vimrc" "${target_home}/.vimrc"
   install_file "${repo_root}/sway/config" "${config_root}/sway/config"
   install_file "${repo_root}/sway/config.d/95-gruvbox-rice.conf" "${config_root}/sway/config.d/95-gruvbox-rice.conf"
@@ -319,6 +336,7 @@ reload_session() {
 
 if ((!files_only)); then
   install_packages
+  "${repo_root}/scripts/check-editor-deps"
   install_nvidia_if_needed
   install_nerd_font
   install_oh_my_zsh
