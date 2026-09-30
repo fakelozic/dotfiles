@@ -64,7 +64,7 @@ font pango:JetBrainsMono Nerd Font 10
 output HDMI-A-2 mode 1920x1080@50Hz pos 0 0 scale 1
 output HDMI-A-1 mode 1920x1080@60Hz pos 1920 0 scale 1
 output * bg ~/walls/wallg.png fill
-output * allow_tearing on
+output * allow_tearing off
 output * max_render_time off
 
 # You can get the names of your outputs by running: swaymsg -t get_outputs

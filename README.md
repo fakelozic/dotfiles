@@ -1,6 +1,6 @@
 # Fedora Sway Gruvbox dotfiles
 
-This repository recreates the current Fedora Sway setup: a restrained Gruvbox palette, a 30 px Waybar on the BenQ display, Alacritty, tmux, native Oh My Zsh prompt, SwayNC, Breeze cursors and the matching lock screen.
+This repository recreates the current Fedora Sway setup: a restrained Gruvbox palette, a 26 px Waybar on the BenQ display, Alacritty, Neovim, minimal Vim, tmux, native Oh My Zsh prompt, SwayNC, Breeze cursors and the matching lock screen.
 
 Firefox is deliberately not configured or themed.
 
@@ -21,7 +21,7 @@ The script is safe to run again. Before writing configuration, it copies existin
 ~/.local/state/dotfiles-backups/YYYYMMDD-HHMMSS/
 ```
 
-It installs the Fedora packages used by the configuration, including `ripgrep`, `eza`, `bat`, Sway, Waybar, Alacritty, tmux, Neovim, SwayNC, Breeze cursors and screenshot/clipboard utilities. It also installs JetBrainsMono Nerd Font and Oh My Zsh. Starship is not installed or activated because the Gruvbox Oh My Zsh theme provides the prompt directly; `starship.toml` remains in the repository as an optional configuration.
+It installs the Fedora packages used by the configuration, including `ripgrep`, `eza`, `bat`, Sway, Waybar, Alacritty, tmux, Neovim, Vim, SwayNC, Breeze cursors and screenshot/clipboard utilities. It also installs JetBrainsMono Nerd Font and Oh My Zsh. Starship is not installed or activated because the Gruvbox Oh My Zsh theme provides the prompt directly; `starship.toml` remains in the repository as an optional configuration.
 
 Useful installer options:
 
@@ -62,9 +62,10 @@ If connector names differ, inspect them with `swaymsg -t get_outputs` and update
 
 ## Key details
 
-- Sway: 1 px subtle active border, 8 px inner and 2 px outer gaps.
+- Sway: 1 px subtle active border, 4 px inner and 1 px outer gaps, 20 px tab titles.
 - Calculator: opens floating.
-- Waybar: bottom, 30 px, seconds visible, square workspace indicators.
+- Waybar: bottom, 26 px, seconds visible, square workspace indicators; RAM turns Gruvbox red above 80%.
+- Rofi: eight launcher rows with the original width and font; a centered power menu opens from Waybar.
 - Swaylock: uses `walls/burning-earth.png`.
 - Notifications: `Super+N` toggles SwayNC.
 - Clipboard: `Super+Shift+V` opens text and image history; persistent user services collect new copies.
@@ -74,3 +75,10 @@ If connector names differ, inspect them with `swaymsg -t get_outputs` and update
 - Shell tools: `ls`/`ll`/`la`/`lt` use `eza`, `cat` uses `bat`, and `rgf` lists files with `ripgrep`.
 
 The original `sve`, `tux`, `chaos`, and `orbit` wallpapers were removed. `wall.png`, `wallg.png`, and `burning-earth.png` remain.
+
+## Editors
+
+- Neovim: transparent Gruvbox, one shared status line, upright comments, Treesitter highlighting for JavaScript, TypeScript/TSX, Go, Rust, Zig, Lua, C and C++. Language servers include `ts_ls`, `gopls`, `rust_analyzer`, `zls`, `lua_ls` and `clangd`; Mason installs the servers.
+- Vim: `vim/vimrc` installs to `~/.vimrc`. Uses Vim's built-in Retrobox theme, transparent gutters, relative line numbers and a small status line, with no additional plugins.
+
+For Neovim parser installation, install a C compiler and `tree-sitter-cli` (0.26.1 or later); the pinned Treesitter plugin requires Neovim 0.12 or later. Install Node.js/npm for the TypeScript server and the toolchains for the languages you use. Keep Zig and ZLS release versions aligned; this setup was checked with both at 0.16.0.

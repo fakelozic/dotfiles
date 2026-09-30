@@ -67,8 +67,10 @@ fi
 required_files=(
   alacritty/alacritty.toml
   rofi/config.rasi
+  rofi/power-menu.rasi
   scripts/cliphist-rofi
   scripts/pick-color
+  scripts/power-menu
   sway/config
   sway/config.d/95-gruvbox-rice.conf
   sway/environment
@@ -82,6 +84,7 @@ required_files=(
   walls/burning-earth.png
   walls/wall.png
   walls/wallg.png
+  vim/vimrc
   waybar/config.jsonc
   waybar/style.css
   zsh/.zshrc
@@ -125,6 +128,7 @@ install_packages() {
     swaylock
     SwayNotificationCenter
     tmux
+    vim-enhanced
     waybar
     wireplumber
     wl-clipboard
@@ -221,6 +225,8 @@ install_dotfiles() {
     "${config_root}/waybar"
     "${target_home}/.local/bin/cliphist-rofi"
     "${target_home}/.local/bin/pick-color"
+    "${target_home}/.local/bin/power-menu"
+    "${target_home}/.vimrc"
     "${target_home}/.zshrc"
     "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
   )
@@ -232,8 +238,11 @@ install_dotfiles() {
 
   install_file "${repo_root}/alacritty/alacritty.toml" "${config_root}/alacritty/alacritty.toml"
   install_file "${repo_root}/rofi/config.rasi" "${config_root}/rofi/config.rasi"
+  install_file "${repo_root}/rofi/power-menu.rasi" "${config_root}/rofi/power-menu.rasi"
   install -Dm0755 -- "${repo_root}/scripts/cliphist-rofi" "${target_home}/.local/bin/cliphist-rofi"
   install -Dm0755 -- "${repo_root}/scripts/pick-color" "${target_home}/.local/bin/pick-color"
+  install -Dm0755 -- "${repo_root}/scripts/power-menu" "${target_home}/.local/bin/power-menu"
+  install_file "${repo_root}/vim/vimrc" "${target_home}/.vimrc"
   install_file "${repo_root}/sway/config" "${config_root}/sway/config"
   install_file "${repo_root}/sway/config.d/95-gruvbox-rice.conf" "${config_root}/sway/config.d/95-gruvbox-rice.conf"
   install_file "${repo_root}/swaylock/config" "${config_root}/swaylock/config"

@@ -1,0 +1,33 @@
+#!/bin/sh
+set -eu
+
+case "${1:-}" in
+    '') preview=false ;;
+    --preview) preview=true ;;
+    *) printf 'Usage: power-menu [--preview]\n' >&2; exit 2 ;;
+esac
+
+theme="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/power-menu.rasi"
+
+if ! selection=$(printf '%s\n' \
+    '   Lock' \
+    '󰤄   Suspend' \
+    '󰜉   Reboot' \
+    '󰐥   Shut down' |
+    rofi -no-config -dmenu -no-custom -format i -selected-row 0 \
+        -p 'Power' -theme "$theme"); then
+    exit 0
+fi
+
+# Preview renders the real menu without running a session action.
+if [ "$preview" = true ]; then
+    exit 0
+fi
+
+case "$selection" in
+    0) exec swaylock -f -c 282828 ;;
+    1) exec systemctl suspend ;;
+    2) exec systemctl reboot ;;
+    3) exec systemctl poweroff ;;
+    *) exit 0 ;;
+esac

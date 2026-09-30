@@ -24,6 +24,9 @@ vim.o.mouse = 'a'
 -- Don't show the mode, since it's already in the status line
 vim.o.showmode = false
 
+-- Use one status line across all splits.
+vim.o.laststatus = 3
+
 -- Sync clipboard between OS and Neovim.
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
@@ -520,8 +523,9 @@ require('lazy').setup({
       --  See `:help lsp-config` for information about keys and how to configure
       ---@type table<string, vim.lsp.Config>
       local servers = {
-        -- clangd = {},
+        clangd = {},
         gopls = {},
+        zls = {},
         -- pyright = {},
         rust_analyzer = {},
         --
@@ -730,12 +734,10 @@ require('lazy').setup({
     config = function()
       ---@diagnostic disable-next-line: missing-fields
       require('gruvbox').setup {
-        styles = {
-          comments = { italic = false }, -- Disable italics in comments
-        },
+        italic = { comments = false },
+        transparent_mode = true,
       }
       vim.cmd.colorscheme 'gruvbox'
-      vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
     end,
   },
 
@@ -793,7 +795,10 @@ require('lazy').setup({
     branch = 'main',
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter-intro`
     config = function()
-      local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+      local parsers = {
+        'bash', 'c', 'cpp', 'diff', 'go', 'html', 'javascript', 'lua', 'luadoc',
+        'markdown', 'markdown_inline', 'query', 'rust', 'tsx', 'typescript', 'vim', 'vimdoc', 'zig',
+      }
       require('nvim-treesitter').install(parsers)
       vim.api.nvim_create_autocmd('FileType', {
         callback = function(args)
