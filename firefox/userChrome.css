@@ -1,0 +1,163 @@
+/* Charcoal UI with restrained rounding, checked against Firefox 157.
+ * Browser controls only. Keep Firefox's layout and keyboard focus behavior.
+ */
+@media not (forced-colors) {
+  :root {
+    color-scheme: dark !important;
+    --toolbox-background-color: #101216 !important;
+    --toolbox-background-color-inactive: #101216 !important;
+    --toolbox-background-image: none !important;
+    --toolbox-text-color: #e0e4ed !important;
+    --toolbox-text-color-inactive: #c0c6d2 !important;
+    --toolbar-background-color: #191c22 !important;
+    --toolbar-text-color: #e0e4ed !important;
+    --toolbar-field-background-color: #12151a !important;
+    --toolbar-field-background-color-focus: #171a20 !important;
+    --toolbar-field-text-color: #e0e4ed !important;
+    --toolbar-field-text-color-focus: #e0e4ed !important;
+    --toolbar-field-border-color: #454d5f !important;
+    --toolbar-field-border-color-focus: #a7b5e3 !important;
+    --focus-outline-color: #a7b5e3 !important;
+    --toolbarbutton-border-radius: 3px !important;
+    --toolbarbutton-background-color-hover: #272c37 !important;
+    --toolbarbutton-background-color-active: #313746 !important;
+    --tab-border-radius: 4px !important;
+    --tab-background-color-hover: #1d2129 !important;
+    --tab-border-color-hover: #2a313b !important;
+    --tab-background-color-selected: #272d37 !important;
+    --tab-border-color-selected: #59637b !important;
+    --tab-text-color: #c5cbd7 !important;
+    --tab-text-color-hover: #e0e4ed !important;
+    --tab-text-color-selected: #f2f4fa !important;
+    --tab-box-shadow-selected: none !important;
+    --tab-close-button-background-color-hover: #434c5e !important;
+    --tab-close-button-background-color-active: #525b70 !important;
+    --urlbar-border-radius: 4px !important;
+    --urlbarview-border-radius: 6px !important;
+    --panel-border-radius: 6px !important;
+    --panel-background-color: #1b1f26 !important;
+    --panel-text-color: #e0e4ed !important;
+    --panel-menuitem-border-radius: 3px !important;
+    --panel-border-color: #303641 !important;
+    --sidebar-background-color: #14171d !important;
+    --sidebar-text-color: #e0e4ed !important;
+
+    /* Tighter than compact density: tab strip and nav bar 28px, down from 36px. */
+    --tab-min-height: 24px !important;
+    --tab-margin-block: 2px !important;
+    --urlbar-height: max(24px, 1.4em) !important;
+    --urlbar-padding-block: 2px !important;
+    --toolbarbutton-padding-inner: 4px !important;
+
+    /* Focused URL field: Firefox doubles the border to 2px. Keep it at 1px,
+     * and pin the inner padding, which Firefox derives from that width.
+     */
+    --urlbar-input-container-border-width-open: var(--urlbar-input-container-border-width) !important;
+    --urlbar-input-container-padding: 4px !important;
+
+    /* Icons in the URL bar row. Firefox draws them at 16px. */
+    --uc-urlbar-icon-size: 14px;
+
+    /* Tab favicons. Firefox draws them at 16px. */
+    --uc-tab-icon-size: 14px;
+  }
+
+  #navigator-toolbox {
+    background-color: #101216 !important;
+    background-image: none !important;
+  }
+
+  #nav-bar,
+  #PersonalToolbar {
+    background-color: #191c22 !important;
+    background-image: none !important;
+  }
+
+  .urlbar {
+    --urlbar-background-border-radius: 4px !important;
+  }
+
+  /* Search button in the URL field: Firefox makes it a 24px-radius pill in
+   * its own neutral greys. Use the toolbar button fills instead.
+   */
+  .searchmode-switcher {
+    --button-border-radius: 3px !important;
+    --button-background-color-muted: #272c37 !important;
+    --button-background-color-muted-hover: #313746 !important;
+    --button-background-color-muted-active: #434c5e !important;
+  }
+
+  /* Icons inside the URL field: lock/shield, permissions, star, page actions. */
+  .urlbar-icon,
+  .sharing-icon,
+  #identity-icon,
+  #permissions-granted-icon,
+  #tracking-protection-icon,
+  #tracking-protection-icon-box,
+  #trust-icon,
+  #blocked-permissions-container > .blocked-permission-icon {
+    width: var(--uc-urlbar-icon-size) !important;
+    height: var(--uc-urlbar-icon-size) !important;
+  }
+
+  /* Buttons beside the field: back, reload, extensions, menu. */
+  #nav-bar .toolbarbutton-1 {
+    --toolbarbutton-icon-size: calc(2 * var(--toolbarbutton-padding-inner) + var(--uc-urlbar-icon-size)) !important;
+  }
+
+  #nav-bar .toolbarbutton-1 > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+    width: var(--uc-urlbar-icon-size) !important;
+    height: var(--uc-urlbar-icon-size) !important;
+  }
+
+  /* Tab favicon, its placeholder, the loading spinner and the sharing icon. */
+  .tab-icon-image,
+  .tab-icon-pending,
+  .tab-throbber,
+  .tab-sharing-icon-overlay {
+    width: var(--uc-tab-icon-size) !important;
+    height: var(--uc-tab-icon-size) !important;
+  }
+
+  /* The spinner is a strip of 30 frames, 16px each; scale the strip to match. */
+  .tab-throbber {
+    background-size: contain !important;
+  }
+
+  .tab-throbber[busy]::before {
+    width: calc(30 * var(--uc-tab-icon-size)) !important;
+    background-size: 100% 100% !important;
+  }
+
+  #tab-preview-panel {
+    --panel-border-radius: 4px !important;
+    --panel-background-color: #1b1f26 !important;
+    --panel-text-color: #e0e4ed !important;
+    --panel-border-color: #303641 !important;
+  }
+
+  #tab-preview-panel .tab-preview-uri {
+    color: #a9b2c1 !important;
+  }
+
+  #tab-preview-panel .tab-preview-thumbnail-container > canvas {
+    border-color: #303641 !important;
+    border-radius: 4px !important;
+  }
+
+  .urlbarView-row-inner,
+  .subviewbutton,
+  .tab-close-button,
+  .tab-icon-overlay {
+    border-radius: 3px !important;
+  }
+
+  /* Menus set their own panel colors, so the :root values do not reach them.
+   * Not `panel`: the autoscroll, Ctrl+Tab and tour panels rely on their own.
+   */
+  menupopup {
+    --panel-background-color: #1b1f26 !important;
+    --panel-text-color: #e0e4ed !important;
+    --panel-border-color: #303641 !important;
+  }
+}

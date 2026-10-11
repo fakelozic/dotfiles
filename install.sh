@@ -66,6 +66,8 @@ fi
 
 required_files=(
   alacritty/alacritty.toml
+  firefox/user.js
+  firefox/userChrome.css
   rofi/config.rasi
   rofi/power-menu.rasi
   scripts/cliphist-rofi
@@ -226,7 +228,29 @@ install_file() {
   install -Dm0644 -- "$source_path" "$destination_path"
 }
 
+# Prints the profile directory Firefox opens by default, or nothing when
+# Firefox has not been started yet.
+find_firefox_profile() {
+  local root relative
+
+  # Firefox keeps using ~/.mozilla when it exists; newer installs use XDG.
+  for root in "${target_home}/.mozilla/firefox" "${config_root}/mozilla/firefox"; do
+    [[ -r ${root}/profiles.ini ]] || continue
+    # Each [Install...] section names the profile that installation opens.
+    relative="$(awk '/^\[/ { install = /^\[Install/ }
+      install && /^Default=/ { sub(/\r$/, ""); print substr($0, 9); exit }' "${root}/profiles.ini")"
+    [[ -n $relative ]] || continue
+    [[ $relative == /* ]] || relative="${root}/${relative}"
+    if [[ -d $relative ]]; then
+      printf '%s\n' "$relative"
+      return 0
+    fi
+  done
+  return 0
+}
+
 install_dotfiles() {
+  local firefox_profile
   local backup_targets=(
     "${config_root}/alacritty"
     "${config_root}/nvim"
@@ -249,6 +273,14 @@ install_dotfiles() {
     "${target_home}/walls/wall.png"
     "${target_home}/walls/wallg.png"
   )
+
+  firefox_profile="$(find_firefox_profile)"
+  if [[ -n $firefox_profile ]]; then
+    backup_targets+=(
+      "${firefox_profile}/chrome/userChrome.css"
+      "${firefox_profile}/user.js"
+    )
+  fi
 
   mkdir -p -- "${state_root}/dotfiles-backups"
   backup_root="$(mktemp -d "${state_root}/dotfiles-backups/${timestamp}-XXXXXX")"
@@ -280,6 +312,14 @@ install_dotfiles() {
   install_file "${repo_root}/waybar/style.css" "${config_root}/waybar/style.css"
   install_file "${repo_root}/zsh/.zshrc" "${target_home}/.zshrc"
   install_file "${repo_root}/zsh/themes/gruvbox.zsh-theme" "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
+
+  if [[ -n $firefox_profile ]]; then
+    install_file "${repo_root}/firefox/userChrome.css" "${firefox_profile}/chrome/userChrome.css"
+    install_file "${repo_root}/firefox/user.js" "${firefox_profile}/user.js"
+    printf 'Installed the Firefox theme; restart Firefox to see changes.\n'
+  else
+    printf 'No Firefox profile found; skipping the Firefox theme. Start Firefox once, then run this again.\n'
+  fi
 
   mkdir -p -- "${config_root}/nvim"
   cp -a -- "${repo_root}/nvim/." "${config_root}/nvim/"

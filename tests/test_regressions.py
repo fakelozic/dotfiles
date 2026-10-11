@@ -198,6 +198,82 @@ class BackupTests(unittest.TestCase):
 
 @unittest.skipUnless(Path("/etc/fedora-release").exists() and os.geteuid() != 0,
                      "Installer smoke test requires Fedora and a non-root user")
+class FirefoxThemeTests(unittest.TestCase):
+    # The layout Firefox writes: the [Install...] default is not the Default=1 profile.
+    profiles_ini = """[Profile1]
+Name=default
+IsRelative=1
+Path=wrt3lm61.default
+Default=1
+
+[Profile0]
+Name=default-release
+IsRelative=1
+Path=3b5pojxm.default-release
+
+[General]
+StartWithLastProfile=1
+Version=2
+
+[Install11457493C5A56847]
+Default=3b5pojxm.default-release
+Locked=1
+"""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="dotfiles-firefox-test-")
+        self.addCleanup(self.temp.cleanup)
+        self.target = Path(self.temp.name)
+
+    def make_profiles(self, root):
+        root = self.target / root
+        for name in ("wrt3lm61.default", "3b5pojxm.default-release"):
+            (root / name).mkdir(parents=True)
+        (root / "profiles.ini").write_text(self.profiles_ini)
+        return root / "3b5pojxm.default-release", root / "wrt3lm61.default"
+
+    def run_install(self):
+        env = os.environ.copy()
+        env["DOTFILES_TARGET_HOME"] = str(self.target)
+        return subprocess.run(["bash", str(REPO / "install.sh"), "--files-only", "--skip-nvidia",
+                               "--skip-shell-change", "--skip-reload"],
+                              env=env, capture_output=True, text=True)
+
+    def test_theme_reaches_the_default_profile_in_either_location(self):
+        for root in (".mozilla/firefox", ".config/mozilla/firefox"):
+            with self.subTest(root=root):
+                self.setUp()
+                profile, other = self.make_profiles(root)
+                result = self.run_install()
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((profile / "chrome/userChrome.css").read_bytes(),
+                                 (REPO / "firefox/userChrome.css").read_bytes())
+                self.assertIn("toolkit.legacyUserProfileCustomizations.stylesheets",
+                              (profile / "user.js").read_text())
+                self.assertEqual(list(other.iterdir()), [])
+
+    def test_existing_firefox_files_are_backed_up(self):
+        profile, _ = self.make_profiles(".config/mozilla/firefox")
+        (profile / "chrome").mkdir()
+        (profile / "chrome/userChrome.css").write_text("original chrome")
+        (profile / "user.js").write_text("original prefs")
+        result = self.run_install()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        backup = next((self.target / ".local/state/dotfiles-backups").iterdir())
+        backed_up = backup / profile.relative_to(self.target)
+        self.assertEqual((backed_up / "chrome/userChrome.css").read_text(), "original chrome")
+        self.assertEqual((backed_up / "user.js").read_text(), "original prefs")
+        self.assertNotEqual((profile / "user.js").read_text(), "original prefs")
+
+    def test_without_a_profile_the_theme_is_skipped(self):
+        result = self.run_install()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("skipping the Firefox theme", result.stdout)
+        self.assertEqual(list(self.target.rglob("userChrome.css")), [])
+
+
+@unittest.skipUnless(Path("/etc/fedora-release").exists() and os.geteuid() != 0,
+                     "Installer smoke test requires Fedora and a non-root user")
 class SessionSetupTests(unittest.TestCase):
     """Runs the full installer path with every system-changing command mocked."""
 

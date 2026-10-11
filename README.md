@@ -6,7 +6,7 @@ This repository recreates the current Fedora Sway setup: a restrained Gruvbox pa
 
 Current desktop preview using a public Lua example in Vim and the power menu in preview mode.
 
-Firefox is deliberately not configured or themed.
+Firefox gets a compact dark toolbar theme of its own. It is charcoal, not Gruvbox; see [Firefox](#firefox).
 
 ## Install on Fedora
 
@@ -97,6 +97,14 @@ The original `sve`, `tux`, `chaos`, and `orbit` wallpapers were removed. `wall.p
 
 The normal installer supplies and checks the core editor prerequisites. With `--files-only`, install those prerequisites separately and verify them with `./scripts/check-editor-deps`. Install the Go, Rust and Zig toolchains for the languages you use. Keep Zig and ZLS release versions aligned; this setup was checked with both at 0.16.0.
 
+## Firefox
+
+`firefox/userChrome.css` restyles Firefox's own toolbars: a charcoal palette, 3–6 px corners, a 28 px tab strip and address bar, and 14 px icons. Websites are not affected. It was written against Firefox 157 and depends on that version's toolbar design, so a later Firefox release may need the file updated.
+
+The installer copies it into the profile Firefox opens by default, together with a one-line `user.js` that tells Firefox to load it. The profile is read from the `[Install…]` entry of `profiles.ini` under `~/.mozilla/firefox` or `~/.config/mozilla/firefox`. Existing copies of both files are backed up first; `user.js` is replaced, not merged. Firefox creates its profile on first start, so on a machine where it has never run the theme is skipped; start Firefox once and run the installer again. Restart Firefox to see changes.
+
+The theme forces dark toolbars. For the new tab and settings pages to match, enable Firefox's built-in Dark theme once under **Add-ons and themes**.
+
 ## Verification
 
 Run the regression checks from the repository root:
@@ -105,4 +113,4 @@ Run the regression checks from the repository root:
 python3 -m unittest discover -s tests -v
 ```
 
-The checks cover screenshot cancellation/capture errors and save locations, editor prerequisite versions, wallpaper/backup preservation across two installs with the same timestamp, and session service setup inside and outside Sway. Screenshot commands are mocked so the tests do not touch your clipboard. The installer checks use a temporary home directory and run only on Fedora as a non-root user. `sudo`, `systemctl`, `gsettings` and downloads are mocked there, so real package installation, service startup and NVIDIA setup are not exercised.
+The checks cover screenshot cancellation/capture errors and save locations, editor prerequisite versions, wallpaper/backup preservation across two installs with the same timestamp, the Firefox theme reaching the default profile with backups (and being skipped when there is no profile), and session service setup inside and outside Sway. Screenshot commands are mocked so the tests do not touch your clipboard. The installer checks use a temporary home directory and run only on Fedora as a non-root user. `sudo`, `systemctl`, `gsettings` and downloads are mocked there, so real package installation, service startup and NVIDIA setup are not exercised.
