@@ -27,6 +27,40 @@ set hidden
 set incsearch ignorecase smartcase
 set wildmenu
 
+" Fedora's Vim is built without clipboard support, so the + and * registers
+" go through wl-clipboard. Outside Wayland the provider reports unavailable.
+if has('clipboard_provider') && executable('wl-copy') && executable('wl-paste')
+  function! s:WlAvailable() abort
+    return !empty($WAYLAND_DISPLAY)
+  endfunction
+
+  function! s:WlCopy(reg, type, lines) abort
+    let l:text = join(a:lines, "\n") .. (a:type ==# 'V' ? "\n" : '')
+    silent call system('wl-copy' .. (a:reg ==# '*' ? ' --primary' : ''), l:text)
+  endfunction
+
+  " A trailing newline marks a linewise paste, as it does in Neovim.
+  function! s:WlPaste(reg) abort
+    let l:cmd = 'wl-paste --no-newline --type text' .. (a:reg ==# '*' ? ' --primary' : '')
+    silent let l:text = system(l:cmd .. ' 2>/dev/null')
+    if v:shell_error
+      return []
+    endif
+    if l:text =~# "\n$"
+      return ['V', split(l:text[:-2], "\n", 1)]
+    endif
+    return ['v', split(l:text, "\n", 1)]
+  endfunction
+
+  let v:clipproviders['wl'] = {
+        \ 'available': function('s:WlAvailable'),
+        \ 'copy': {'+': function('s:WlCopy'), '*': function('s:WlCopy')},
+        \ 'paste': {'+': function('s:WlPaste'), '*': function('s:WlPaste')},
+        \ }
+  set clipmethod^=wl
+  set clipboard=unnamedplus
+endif
+
 function! s:MinimalColors() abort
   highlight Normal       guifg=#ebdbb2 guibg=NONE    gui=NONE ctermfg=223 ctermbg=NONE cterm=NONE
   highlight LineNr       guifg=#928374 guibg=NONE    gui=NONE ctermfg=243 ctermbg=NONE cterm=NONE

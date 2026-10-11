@@ -15,3 +15,6 @@ alias lt='eza --tree --icons --group-directories-first --level=2'
 alias cat='bat --paging=never'
 alias rgf='rg --files'
 alias refresh='source ~/.zshrc'
+
+# Machine-specific PATH entries and toolchain managers stay out of the repository.
+[[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"

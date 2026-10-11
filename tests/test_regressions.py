@@ -91,6 +91,19 @@ if name == "wl-copy":
         result, _ = self.run_capture(MOCK_COPY_STATUS="1")
         self.assertNotEqual(result.returncode, 0)
 
+    def test_saved_screenshots_go_to_the_screenshots_directory(self):
+        for mode in ("area", "output"):
+            with self.subTest(mode=mode):
+                home = self.root / f"home-{mode}"
+                home.mkdir()
+                result, calls = self.run_capture(mode, HOME=str(home))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertNotIn("wl-copy", [call["command"] for call in calls])
+                saved = list(home.rglob("*.png"))
+                self.assertEqual(len(saved), 1)
+                self.assertEqual(saved[0].parent, home / "Pictures/Screenshots")
+                self.assertEqual(saved[0].read_bytes(), b"PNG fixture")
+
 
 class EditorPrerequisiteTests(unittest.TestCase):
     def setUp(self):
@@ -178,6 +191,65 @@ class BackupTests(unittest.TestCase):
             second_backup = next(path for path in backups if path != original_backup)
             self.assertEqual((second_backup / ".vimrc").read_text(), "edited Vim config B")
             self.assertTrue(os.access(target / ".local/bin/screenshot", os.X_OK))
+            self.assertIn('source "$HOME/.zshrc.local"', (target / ".zshrc").read_text())
+            self.assertEqual((target / ".config/nvim/.stylua.toml").read_bytes(),
+                             (REPO / "nvim/.stylua.toml").read_bytes())
+
+
+@unittest.skipUnless(Path("/etc/fedora-release").exists() and os.geteuid() != 0,
+                     "Installer smoke test requires Fedora and a non-root user")
+class SessionSetupTests(unittest.TestCase):
+    """Runs the full installer path with every system-changing command mocked."""
+
+    services = "swaync.service cliphist-text.service cliphist-image.service"
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="dotfiles-session-test-")
+        self.addCleanup(self.temp.cleanup)
+        self.target = Path(self.temp.name)
+        self.bin = self.target / "mock-bin"
+        self.bin.mkdir()
+        self.log = self.target / "calls.log"
+        record = '#!/bin/sh\nprintf \'%s\\n\' "$(basename "$0") $*" >> "$MOCK_LOG"\n'
+        for tool in ("sudo", "curl", "sha256sum", "tar", "fc-cache", "git", "gsettings",
+                     "cc", "node", "npm", "make", "unzip"):
+            executable(self.bin / tool, record)
+        executable(self.bin / "systemctl", record +
+                   'case " $* " in *" is-active "*) exit "${MOCK_ACTIVE_STATUS:-0}" ;; esac\n')
+        executable(self.bin / "nvim", "#!/bin/sh\necho 'NVIM v0.12.0'\n")
+        executable(self.bin / "tree-sitter", "#!/bin/sh\necho 'tree-sitter 0.26.1'\n")
+
+    def run_install(self, **overrides):
+        env = os.environ.copy()
+        env.pop("SWAYSOCK", None)
+        env.update(DOTFILES_TARGET_HOME=str(self.target), MOCK_LOG=str(self.log),
+                   PATH=str(self.bin) + ":" + env["PATH"], **overrides)
+        result = subprocess.run(["bash", str(REPO / "install.sh"), "--skip-nvidia",
+                                 "--skip-shell-change", "--skip-reload"],
+                                env=env, capture_output=True, text=True)
+        return result, self.log.read_text().splitlines()
+
+    def test_outside_sway_services_are_enabled_but_not_started(self):
+        result, calls = self.run_install()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("systemctl --user enable " + self.services, calls)
+        self.assertFalse([call for call in calls if " start " in call or " is-active " in call])
+        self.assertIn("next Sway login", result.stdout)
+        self.assertIn("gsettings set org.gnome.desktop.interface color-scheme prefer-dark", calls)
+
+    def test_inside_sway_services_are_started_and_verified(self):
+        result, calls = self.run_install(SWAYSOCK="/run/user/0/sway-ipc.sock")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("systemctl --user enable " + self.services, calls)
+        self.assertIn("systemctl --user start " + self.services, calls)
+        self.assertLess(calls.index("systemctl --user stop dunst.service mako.service"),
+                        calls.index("systemctl --user start " + self.services))
+
+    def test_inside_sway_a_service_that_stays_down_is_reported(self):
+        result, _ = self.run_install(SWAYSOCK="/run/user/0/sway-ipc.sock",
+                                     MOCK_ACTIVE_STATUS="3")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Service failed to start: swaync.service", result.stderr)
 
 
 if __name__ == "__main__":

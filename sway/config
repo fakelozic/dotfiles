@@ -111,6 +111,9 @@ bindsym $mod+d exec $menu
 # Open the notification center.
 bindsym --no-repeat $mod+n exec swaync-client --toggle-panel
 
+# Lock the screen through swayidle's lock hook, so swaylock/config applies.
+bindsym --no-repeat $mod+Escape exec loginctl lock-session
+
 # Drag floating windows by holding down $mod and left mouse button.
 # Resize them with right mouse button + $mod.
 # Despite the name, also works for non-floating windows.

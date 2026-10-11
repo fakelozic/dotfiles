@@ -104,14 +104,18 @@ install_packages() {
   local packages=(
     alacritty
     bat
+    blueman
     breeze-cursor-theme
     cliphist
     curl
     eza
+    fd-find
     fontconfig
     gcc
     git-core
     gnome-calculator
+    gnome-keyring
+    gnome-keyring-pam
     grim
     ImageMagick
     jq
@@ -120,7 +124,9 @@ install_packages() {
     neovim
     nodejs
     npm
+    network-manager-applet
     NetworkManager-tui
+    papirus-icon-theme
     pavucontrol
     pciutils
     ripgrep
@@ -293,7 +299,12 @@ install_dotfiles() {
 }
 
 configure_session() {
-  local current_user
+  local current_user service
+  local session_services=(
+    swaync.service
+    cliphist-text.service
+    cliphist-image.service
+  )
   current_user="$(id -un)"
 
   if ((!skip_shell_change)); then
@@ -304,15 +315,49 @@ configure_session() {
   # Waybar is launched by Fedora's Sway config. A user service would duplicate it.
   systemctl --user daemon-reload
   systemctl --user disable --now waybar.service >/dev/null 2>&1 || true
-  systemctl --user enable --now \
-    swaync.service \
-    cliphist-text.service \
-    cliphist-image.service
-  for service in swaync.service cliphist-text.service cliphist-image.service; do
+  systemctl --user enable "${session_services[@]}"
+
+  # These services need a running Sway session. From another desktop or a
+  # console they cannot start yet, so enabling them is all that can be done.
+  if [[ -z ${SWAYSOCK:-} ]]; then
+    printf 'Not running inside Sway; the session services start at the next Sway login.\n'
+    return
+  fi
+
+  # SwayNC exits when another daemon already owns the notification bus name.
+  systemctl --user stop dunst.service mako.service >/dev/null 2>&1 || true
+  systemctl --user start "${session_services[@]}"
+  for service in "${session_services[@]}"; do
     if ! systemctl --user is-active --quiet "$service"; then
       printf 'Service failed to start: %s\n' "$service" >&2
       systemctl --user --no-pager status "$service" >&2 || true
       return 1
+    fi
+  done
+}
+
+configure_appearance() {
+  local schema=org.gnome.desktop.interface
+  local setting key value
+  local settings=(
+    'color-scheme prefer-dark'
+    'cursor-theme breeze_cursors'
+    'cursor-size 24'
+    'icon-theme Papirus-Dark'
+  )
+
+  if ! command -v gsettings >/dev/null 2>&1; then
+    printf 'gsettings not found; skipping GTK appearance settings.\n' >&2
+    return
+  fi
+
+  # GTK applications read these instead of Sway's cursor theme. The GTK theme
+  # itself is left as it is.
+  printf 'Applying dark GTK appearance, Breeze cursors and Papirus icons...\n'
+  for setting in "${settings[@]}"; do
+    read -r key value <<< "$setting"
+    if ! gsettings set "$schema" "$key" "$value"; then
+      printf 'Could not set %s %s; continuing.\n' "$schema" "$key" >&2
     fi
   done
 }
@@ -346,6 +391,7 @@ install_dotfiles
 
 if ((!files_only)); then
   configure_session
+  configure_appearance
 fi
 
 reload_session

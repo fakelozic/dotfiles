@@ -20,11 +20,7 @@ fi
 case "$mode" in
   clipboard) wl-copy --type image/png < "$capture_file" ;;
   area|output)
-    if [[ $mode == output ]]; then
-      destination_dir="$HOME/Pictures/Screenshots"
-    else
-      destination_dir="$HOME"
-    fi
+    destination_dir="$HOME/Pictures/Screenshots"
     mkdir -p -- "$destination_dir"
     mv -- "$capture_file" "${destination_dir}/screenshot-$(date +%Y%m%d-%H%M%S-%N).png"
     ;;

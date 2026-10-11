@@ -29,6 +29,10 @@ Each run gets a unique backup directory. Existing wallpaper files are backed up 
 
 It installs the Fedora packages used by the configuration, including `ripgrep`, `eza`, `bat`, Sway, Waybar, Alacritty, tmux, Neovim, Vim, SwayNC, Breeze cursors and screenshot/clipboard utilities. It also installs JetBrainsMono Nerd Font and Oh My Zsh. The installer also installs the C compiler, `make`, `unzip`, `tree-sitter-cli`, Node.js and npm needed by the editor setup. It checks for Neovim 0.12.0 or later and `tree-sitter-cli` 0.26.1 or later before replacing configuration. Starship is not installed or activated because the Gruvbox Oh My Zsh theme provides the prompt directly; `starship.toml` remains in the repository as an optional configuration.
 
+The package list also covers the NetworkManager and Bluetooth tray applets, GNOME Keyring for application secrets and the Papirus icon theme. After installing, the script sets GTK applications to dark mode with Breeze cursors and Papirus icons; the GTK theme itself is left unchanged.
+
+The installer can be run from any desktop or from a console. SwayNC and the clipboard services are always enabled. They are started and checked immediately only inside a running Sway session; otherwise they start at the next Sway login.
+
 Useful installer options:
 
 ```bash
@@ -37,6 +41,10 @@ Useful installer options:
 ./install.sh --skip-shell-change
 ./install.sh --skip-reload
 ```
+
+## Machine-specific shell settings
+
+Every install replaces `~/.zshrc`. Keep `PATH` entries, toolchain managers such as mise or SDKMAN, and private aliases in `~/.zshrc.local`. The installed `.zshrc` sources that file last, and the installer never writes to it.
 
 ## NVIDIA and Secure Boot
 
@@ -72,12 +80,12 @@ If connector names differ, inspect them with `swaymsg -t get_outputs` and update
 - Calculator: opens floating.
 - Waybar: bottom, 26 px, seconds visible, square workspace indicators; RAM turns Gruvbox red above 80%.
 - Rofi: eight launcher rows with the original width and font; a centered power menu opens from Waybar.
-- Swaylock: uses `walls/burning-earth.png`.
+- Swaylock: uses `walls/burning-earth.png`. `Super+Escape` locks the screen.
 - Notifications: `Super+N` toggles SwayNC.
 - Clipboard: `Super+Shift+V` opens text and image history; persistent user services collect new copies.
 - Screenshots: `Super+Shift+S` selects an area and copies it to the clipboard. Cancelling selection or failing to capture leaves the clipboard untouched.
-- tmux prefix: `Ctrl+Space`; the session chip changes from yellow to purple while the prefix is active.
-- Special Sway mode: `Super+Z`, then `c` copies a picked color, `s` copies a selected screenshot, and `a` saves an output screenshot.
+- tmux prefix: `Ctrl+Space`, with `Ctrl+A` as a second prefix; press either twice to pass it to the program in the pane. The session chip changes from yellow to purple while the prefix is active.
+- Special Sway mode: `Super+Z`, then `c` copies a picked color, `s` copies a selected screenshot, `Shift+s` saves a selected area, and `a` saves an output screenshot. Saved screenshots go to `~/Pictures/Screenshots`.
 - Shell tools: `ls`/`ll`/`la`/`lt` use `eza`, `cat` uses `bat`, and `rgf` lists files with `ripgrep`.
 
 The original `sve`, `tux`, `chaos`, and `orbit` wallpapers were removed. `wall.png`, `wallg.png`, and `burning-earth.png` remain.
@@ -85,7 +93,7 @@ The original `sve`, `tux`, `chaos`, and `orbit` wallpapers were removed. `wall.p
 ## Editors
 
 - Neovim: transparent Gruvbox, one shared status line, upright comments, Treesitter highlighting for JavaScript, TypeScript/TSX, Go, Rust, Zig, Lua, C and C++. Language servers include `ts_ls`, `gopls`, `rust_analyzer`, `zls`, `lua_ls` and `clangd`; Mason installs the servers.
-- Vim: `vim/vimrc` installs to `~/.vimrc`. Uses Vim's built-in Retrobox theme, transparent gutters, relative line numbers and a small status line, with no additional plugins.
+- Vim: `vim/vimrc` installs to `~/.vimrc`. Uses Vim's built-in Retrobox theme, transparent gutters, relative line numbers and a small status line, with no additional plugins. Yank and paste share the Wayland clipboard through `wl-clipboard`, as they do in Neovim.
 
 The normal installer supplies and checks the core editor prerequisites. With `--files-only`, install those prerequisites separately and verify them with `./scripts/check-editor-deps`. Install the Go, Rust and Zig toolchains for the languages you use. Keep Zig and ZLS release versions aligned; this setup was checked with both at 0.16.0.
 
@@ -97,4 +105,4 @@ Run the regression checks from the repository root:
 python3 -m unittest discover -s tests -v
 ```
 
-The checks cover screenshot cancellation/capture errors, editor prerequisite versions, and wallpaper/backup preservation across two installs with the same timestamp. Screenshot commands are mocked so the tests do not touch your clipboard. The installer check uses a temporary home directory and runs only on Fedora as a non-root user; package installation, service startup and NVIDIA setup are not exercised.
+The checks cover screenshot cancellation/capture errors and save locations, editor prerequisite versions, wallpaper/backup preservation across two installs with the same timestamp, and session service setup inside and outside Sway. Screenshot commands are mocked so the tests do not touch your clipboard. The installer checks use a temporary home directory and run only on Fedora as a non-root user. `sudo`, `systemctl`, `gsettings` and downloads are mocked there, so real package installation, service startup and NVIDIA setup are not exercised.
