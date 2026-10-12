@@ -86,7 +86,7 @@ If connector names differ, inspect them with `swaymsg -t get_outputs` and update
 - Screenshots: `Super+Shift+S` selects an area and copies it to the clipboard. Cancelling selection or failing to capture leaves the clipboard untouched.
 - tmux prefix: `Ctrl+Space`, with `Ctrl+A` as a second prefix; press either twice to pass it to the program in the pane. The session chip changes from yellow to purple while the prefix is active.
 - Special Sway mode: `Super+Z`, then `c` copies a picked color, `s` copies a selected screenshot, `Shift+s` saves a selected area, and `a` saves an output screenshot. Saved screenshots go to `~/Pictures/Screenshots`.
-- Shell tools: `ls`/`ll`/`la`/`lt` use `eza`, `cat` uses `bat`, and `rgf` lists files with `ripgrep`.
+- Shell aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`, `pstat` prints permissions, and `suup` upgrades DNF and Flatpak. `ls` and `cat` stay stock.
 
 The original `sve`, `tux`, `chaos`, and `orbit` wallpapers were removed. `wall.png`, `wallg.png`, and `burning-earth.png` remain.
 
