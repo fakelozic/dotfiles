@@ -10,7 +10,6 @@ alias ezo="eza -lahgo --icons --group-directories-first"
 alias ezg="eza -lahg --icons --group-directories-first --git"
 alias ezt="eza -T --icons --group-directories-first --level=2"
 alias pstat='stat -c "%A %a %n"'
-alias gopomo="$HOME/go-pomodoro"
 alias refresh='source ~/.zshrc'
 
 # Attempt both update managers and report failures from either one.
