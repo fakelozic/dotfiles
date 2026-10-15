@@ -11,6 +11,7 @@ theme="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/power-menu.rasi"
 
 if ! selection=$(printf '%s\n' \
     '   Lock' \
+    '󰍃   Log out' \
     '󰤄   Suspend' \
     '󰜉   Reboot' \
     '󰐥   Shut down' |
@@ -26,8 +27,9 @@ fi
 
 case "$selection" in
     0) exec swaylock -f -c 282828 ;;
-    1) exec systemctl suspend ;;
-    2) exec systemctl reboot ;;
-    3) exec systemctl poweroff ;;
+    1) exec swaymsg exit ;;
+    2) exec systemctl suspend ;;
+    3) exec systemctl reboot ;;
+    4) exec systemctl poweroff ;;
     *) exit 0 ;;
 esac
