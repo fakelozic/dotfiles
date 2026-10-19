@@ -1,0 +1,15 @@
+#!/bin/sh
+set -u
+
+# Locks the session with the Quickshell lock screen and returns once the
+# compositor has confirmed the lock, so it is safe before suspend. Falls back
+# to swaylock when Quickshell is not running or does not lock within 3 seconds.
+if qs ipc call lock lock >/dev/null 2>&1; then
+    tries=0
+    while [ "$tries" -lt 30 ]; do
+        [ "$(qs ipc call lock secure 2>/dev/null)" = true ] && exit 0
+        sleep 0.1
+        tries=$((tries + 1))
+    done
+fi
+exec swaylock -f

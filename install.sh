@@ -69,18 +69,20 @@ required_files=(
   firefox/user.js
   firefox/userChrome.css
   rofi/config.rasi
-  rofi/power-menu.rasi
   scripts/cliphist-rofi
+  scripts/lock-screen
+  scripts/nightlight
   scripts/pick-color
-  scripts/power-menu
   scripts/screenshot
   scripts/check-editor-deps
+  quickshell/shell.qml
   sway/config
+  sway/config.d/90-bar.conf
+  sway/config.d/90-swayidle.conf
+  sway/config.d/95-autostart-policykit-agent.conf
   sway/config.d/95-gruvbox-rice.conf
   sway/environment
   swaylock/config
-  swaync/config.json
-  swaync/style.css
   systemd/user/cliphist-image.service
   systemd/user/cliphist-text.service
   tmux/tmux.conf
@@ -89,8 +91,6 @@ required_files=(
   walls/wall.png
   walls/wallg.png
   vim/vimrc
-  waybar/config.jsonc
-  waybar/style.css
   zsh/.zshrc
   zsh/themes/gruvbox.zsh-theme
 )
@@ -131,6 +131,7 @@ install_packages() {
     papirus-icon-theme
     pavucontrol
     pciutils
+    quickshell
     ripgrep
     rofi
     slurp
@@ -140,15 +141,14 @@ install_packages() {
     sway-systemd
     swayidle
     swaylock
-    SwayNotificationCenter
     tar
     tmux
     tree-sitter-cli
     unzip
     vim-enhanced
-    waybar
     wireplumber
     wl-clipboard
+    wlsunset
     xdg-desktop-portal-gtk
     xdg-desktop-portal-wlr
     xz
@@ -254,17 +254,17 @@ install_dotfiles() {
   local backup_targets=(
     "${config_root}/alacritty"
     "${config_root}/nvim"
+    "${config_root}/quickshell"
     "${config_root}/rofi"
     "${config_root}/sway"
     "${config_root}/swaylock"
-    "${config_root}/swaync"
     "${config_root}/systemd/user/cliphist-image.service"
     "${config_root}/systemd/user/cliphist-text.service"
     "${config_root}/tmux"
-    "${config_root}/waybar"
     "${target_home}/.local/bin/cliphist-rofi"
+    "${target_home}/.local/bin/lock-screen"
+    "${target_home}/.local/bin/nightlight"
     "${target_home}/.local/bin/pick-color"
-    "${target_home}/.local/bin/power-menu"
     "${target_home}/.local/bin/screenshot"
     "${target_home}/.vimrc"
     "${target_home}/.zshrc"
@@ -292,24 +292,23 @@ install_dotfiles() {
 
   install_file "${repo_root}/alacritty/alacritty.toml" "${config_root}/alacritty/alacritty.toml"
   install_file "${repo_root}/rofi/config.rasi" "${config_root}/rofi/config.rasi"
-  install_file "${repo_root}/rofi/power-menu.rasi" "${config_root}/rofi/power-menu.rasi"
   install -Dm0755 -- "${repo_root}/scripts/cliphist-rofi" "${target_home}/.local/bin/cliphist-rofi"
+  install -Dm0755 -- "${repo_root}/scripts/lock-screen" "${target_home}/.local/bin/lock-screen"
+  install -Dm0755 -- "${repo_root}/scripts/nightlight" "${target_home}/.local/bin/nightlight"
   install -Dm0755 -- "${repo_root}/scripts/pick-color" "${target_home}/.local/bin/pick-color"
-  install -Dm0755 -- "${repo_root}/scripts/power-menu" "${target_home}/.local/bin/power-menu"
   install -Dm0755 -- "${repo_root}/scripts/screenshot" "${target_home}/.local/bin/screenshot"
   install_file "${repo_root}/vim/vimrc" "${target_home}/.vimrc"
   install_file "${repo_root}/sway/config" "${config_root}/sway/config"
+  install_file "${repo_root}/sway/config.d/90-bar.conf" "${config_root}/sway/config.d/90-bar.conf"
+  install_file "${repo_root}/sway/config.d/90-swayidle.conf" "${config_root}/sway/config.d/90-swayidle.conf"
+  install_file "${repo_root}/sway/config.d/95-autostart-policykit-agent.conf" "${config_root}/sway/config.d/95-autostart-policykit-agent.conf"
   install_file "${repo_root}/sway/config.d/95-gruvbox-rice.conf" "${config_root}/sway/config.d/95-gruvbox-rice.conf"
   install_file "${repo_root}/swaylock/config" "${config_root}/swaylock/config"
   sed -i "s|^image=.*|image=${target_home}/walls/burning-earth.png|" "${config_root}/swaylock/config"
-  install_file "${repo_root}/swaync/config.json" "${config_root}/swaync/config.json"
-  install_file "${repo_root}/swaync/style.css" "${config_root}/swaync/style.css"
   install_file "${repo_root}/systemd/user/cliphist-image.service" "${config_root}/systemd/user/cliphist-image.service"
   install_file "${repo_root}/systemd/user/cliphist-text.service" "${config_root}/systemd/user/cliphist-text.service"
   install_file "${repo_root}/tmux/tmux.conf" "${config_root}/tmux/tmux.conf"
   install_file "${repo_root}/tmux/gruvbox-theme.conf" "${config_root}/tmux/gruvbox-theme.conf"
-  install_file "${repo_root}/waybar/config.jsonc" "${config_root}/waybar/config.jsonc"
-  install_file "${repo_root}/waybar/style.css" "${config_root}/waybar/style.css"
   install_file "${repo_root}/zsh/.zshrc" "${target_home}/.zshrc"
   install_file "${repo_root}/zsh/themes/gruvbox.zsh-theme" "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
 
@@ -323,6 +322,9 @@ install_dotfiles() {
 
   mkdir -p -- "${config_root}/nvim"
   cp -a -- "${repo_root}/nvim/." "${config_root}/nvim/"
+
+  mkdir -p -- "${config_root}/quickshell"
+  cp -a -- "${repo_root}/quickshell/." "${config_root}/quickshell/"
 
   mkdir -p -- "${target_home}/walls" "${target_home}/Pictures/Screenshots"
   install -m0644 -- "${repo_root}/walls/burning-earth.png" "${target_home}/walls/burning-earth.png"
@@ -341,7 +343,6 @@ install_dotfiles() {
 configure_session() {
   local current_user service
   local session_services=(
-    swaync.service
     cliphist-text.service
     cliphist-image.service
   )
@@ -352,9 +353,14 @@ configure_session() {
     sudo usermod --shell /usr/bin/zsh "$current_user"
   fi
 
-  # Waybar is launched by Fedora's Sway config. A user service would duplicate it.
+  # Quickshell draws the bar and shows notifications, started by
+  # sway/config.d/90-bar.conf. A Waybar user service would add a second bar.
+  # SwayNC is masked as well as disabled, because D-Bus would otherwise start
+  # it again for the first notification and keep Quickshell from receiving any.
   systemctl --user daemon-reload
   systemctl --user disable --now waybar.service >/dev/null 2>&1 || true
+  systemctl --user disable --now swaync.service >/dev/null 2>&1 || true
+  systemctl --user mask swaync.service >/dev/null 2>&1 || true
   systemctl --user enable "${session_services[@]}"
 
   # These services need a running Sway session. From another desktop or a
@@ -364,7 +370,7 @@ configure_session() {
     return
   fi
 
-  # SwayNC exits when another daemon already owns the notification bus name.
+  # Quickshell's notification server needs the bus name these daemons take.
   systemctl --user stop dunst.service mako.service >/dev/null 2>&1 || true
   systemctl --user start "${session_services[@]}"
   for service in "${session_services[@]}"; do
@@ -409,10 +415,13 @@ reload_session() {
 
   if [[ -n ${SWAYSOCK:-} ]] && command -v swaymsg >/dev/null 2>&1; then
     swaymsg reload >/dev/null
-  fi
-  if command -v swaync-client >/dev/null 2>&1; then
-    swaync-client --reload-config >/dev/null 2>&1 || true
-    swaync-client --reload-css >/dev/null 2>&1 || true
+    # Sway runs exec lines only at login. A running Quickshell reloads its
+    # files by itself, but it can reload while they are half copied, so it is
+    # restarted instead.
+    if command -v quickshell >/dev/null 2>&1; then
+      quickshell kill >/dev/null 2>&1 || true
+      swaymsg exec quickshell >/dev/null
+    fi
   fi
   if command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
     tmux source-file "${config_root}/tmux/tmux.conf"

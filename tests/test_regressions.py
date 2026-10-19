@@ -1,6 +1,7 @@
 """Run with: python3 -m unittest discover -s tests -v."""
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -277,7 +278,7 @@ Locked=1
 class SessionSetupTests(unittest.TestCase):
     """Runs the full installer path with every system-changing command mocked."""
 
-    services = "swaync.service cliphist-text.service cliphist-image.service"
+    services = "cliphist-text.service cliphist-image.service"
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="dotfiles-session-test-")
@@ -313,6 +314,12 @@ class SessionSetupTests(unittest.TestCase):
         self.assertIn("next Sway login", result.stdout)
         self.assertIn("gsettings set org.gnome.desktop.interface color-scheme prefer-dark", calls)
 
+    def test_swaync_is_disabled_and_masked_so_quickshell_gets_notifications(self):
+        result, calls = self.run_install()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("systemctl --user disable --now swaync.service", calls)
+        self.assertIn("systemctl --user mask swaync.service", calls)
+
     def test_inside_sway_services_are_started_and_verified(self):
         result, calls = self.run_install(SWAYSOCK="/run/user/0/sway-ipc.sock")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -325,7 +332,65 @@ class SessionSetupTests(unittest.TestCase):
         result, _ = self.run_install(SWAYSOCK="/run/user/0/sway-ipc.sock",
                                      MOCK_ACTIVE_STATUS="3")
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Service failed to start: swaync.service", result.stderr)
+        self.assertIn("Service failed to start: cliphist-text.service", result.stderr)
+
+
+def run_js(library, expression):
+    """Evaluates expression with a Quickshell .pragma library JS file loaded."""
+    script = """
+const fs = require("fs"), vm = require("vm");
+const context = {};
+vm.createContext(context);
+vm.runInContext(fs.readFileSync(process.argv[1], "utf8").replace(/^\\.pragma library/m, ""), context);
+context.input = fs.readFileSync(0, "utf8");
+process.stdout.write(JSON.stringify(vm.runInContext(process.argv[2], context)));
+"""
+    sway = "\n".join("#@file " + str(path) + "\n" + path.read_text()
+                     for path in [REPO / "sway/config", *sorted((REPO / "sway/config.d").glob("*.conf"))])
+    result = subprocess.run(["node", "-e", script, str(REPO / "quickshell" / library), expression],
+                            input=sway, capture_output=True, text=True, check=True)
+    return json.loads(result.stdout)
+
+
+@unittest.skipUnless(shutil.which("node"), "Node.js runs the Quickshell search logic")
+class QuickshellLogicTests(unittest.TestCase):
+    def test_launcher_ranks_prefix_then_word_then_initials(self):
+        ranks = run_js("Search.js", """[
+            rank("Firefox", [], "fire"), rank("GNOME Boxes", [], "box"),
+            rank("Visual Studio Code", [], "vsc"), rank("Thunderbird", [], "derb"),
+            rank("Files", ["file manager"], "manager"), rank("LibreOffice Writer", [], "lbw"),
+            rank("Firefox", [], "zzz"), rank("Firefox", ["web browser"], "web fire")]""")
+        self.assertEqual(ranks, [0, 1, 2, 3, 4, 5, -1, 4])
+
+    def test_calculator_handles_precedence_and_rejects_non_arithmetic(self):
+        values = run_js("Search.js", """[
+            calculate("2+3*4"), calculate("(2+3)*4"), calculate("2^3^2"), calculate("-3 + 5"),
+            calculate("10 % 4"), calculate("6 ÷ 4"), calculate("1,000 * 2"),
+            calculate("42"), calculate("-5"), calculate("1/0"), calculate("2 +"), calculate("firefox"),
+            formatNumber(0.1 + 0.2), formatNumber(1 / 3)]""")
+        self.assertEqual(values, [14, 20, 512, 2, 2, 1.5, 2000,
+                                  None, None, None, None, None, "0.3", "0.333333333333"])
+
+    def test_every_sway_binding_gets_keys_and_a_description(self):
+        bindings = run_js("Bindings.js", "parse(input)")
+        by_keys = {" ".join(binding["keys"]): binding for binding in bindings}
+        self.assertEqual(by_keys["Super D"]["description"], "Search apps and commands")
+        self.assertEqual(by_keys["Super Tab"]["description"], "Switch window")
+        self.assertEqual(by_keys["Super Shift V"]["description"], "Clipboard history")
+        self.assertEqual(by_keys["Super Enter"]["description"], "Start a terminal")
+        self.assertEqual(by_keys["Super Shift 0"]["description"], "Move window to workspace 10")
+        # Keys inside a mode show the key that enters it first.
+        self.assertEqual(by_keys["Super Z then C"]["section"], "Special mode")
+        self.assertEqual(by_keys["Super R then H"]["description"], "Shrink width")
+        # Commands keep their variables filled in, ready for swaymsg.
+        self.assertTrue(by_keys["Super Tab"]["command"].startswith("exec qs ipc call windows next || rofi"))
+        for binding in bindings:
+            self.assertTrue(binding["description"], binding)
+            self.assertNotIn("$", " ".join(binding["keys"]), binding)
+
+    def test_filter_needs_every_word(self):
+        found = run_js("Bindings.js", "filter(parse(input), 'move workspace 3').map(b => b.keys.join(' '))")
+        self.assertEqual(found, ["Super Shift 3"])
 
 
 if __name__ == "__main__":

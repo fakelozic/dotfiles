@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+
+# Night light (wlsunset) control for the Quickshell bar.
+# Keep the wlsunset arguments in sync with the exec line in ~/.config/sway/config.
+case "${1:-}" in
+    status)
+        exec pgrep -x wlsunset >/dev/null
+        ;;
+    toggle)
+        if pgrep -x wlsunset >/dev/null; then
+            pkill -x wlsunset
+        else
+            setsid -f wlsunset -S 06:30 -s 18:30 -d 1800 >/dev/null 2>&1
+        fi
+        ;;
+    *)
+        printf 'Usage: nightlight status|toggle\n' >&2
+        exit 2
+        ;;
+esac

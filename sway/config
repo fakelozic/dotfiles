@@ -9,16 +9,13 @@ set $up k
 set $right l
 # Your preferred terminal emulator
 set $term alacritty
-# Your preferred application launcher
-# Note: pass the final command to swaymsg so that the resulting window can be opened
-# on the original workspace that the command was run on.
+# Quickshell draws the launcher, window switcher and clipboard history. Rofi
+# takes over when Quickshell is not running (qs ipc then fails).
 # Recommends: rofi-wayland
 set $rofi_cmd rofi \
         -terminal '$term'
-# Shows a combined list of the applications with desktop files and
-# executables from PATH.
-# TODO: add window with the next release of rofi-wayland
-set $menu $rofi_cmd -show combi -combi-modes drun#run -modes combi
+set $menu qs ipc call launcher toggle || $rofi_cmd -show drun
+set $windows qs ipc call windows next || $rofi_cmd -show window
 set $browser firefox
 
 # Gruvbox colors
@@ -69,8 +66,13 @@ output * max_render_time off
 
 # You can get the names of your outputs by running: swaymsg -t get_outputs
 
+### Night light
+# Fade to 4000 K over the half hour after 18:30 and back before 06:30.
+# Fixed times, so no location is needed.
+exec wlsunset -S 06:30 -s 18:30 -d 1800
+
 ### Idle configuration
-# Fedora's included 90-swayidle.conf starts the single idle manager.
+# config.d/90-swayidle.conf starts the single idle manager in place of Fedora's.
 # Lock after 5 minutes; switch displays off 1 minute later.
 set $lock_timeout 300
 set $screen_timeout 60
@@ -106,12 +108,15 @@ bindsym --no-repeat $mod+Return exec $term
 bindsym --no-repeat $mod+Shift+q kill
 
 # Start your launcher
-bindsym $mod+d exec $menu
+bindsym --no-repeat $mod+d exec $menu
+
+# Switch window: hold Super and press Tab again to go further back.
+bindsym --no-repeat $mod+Tab exec $windows
 
 # Open the notification center.
-bindsym --no-repeat $mod+n exec swaync-client --toggle-panel
+bindsym --no-repeat $mod+n exec qs ipc call notifications toggle
 
-# Lock the screen through swayidle's lock hook, so swaylock/config applies.
+# Lock the screen through swayidle's lock hook, which runs lock-screen.
 bindsym --no-repeat $mod+Escape exec loginctl lock-session
 
 # Drag floating windows by holding down $mod and left mouse button.
@@ -249,7 +254,7 @@ mode "resize" {
 	bindsym Escape mode "default"
 }
 bindsym $mod+r mode "resize"
-bindsym --no-repeat $mod+Shift+v exec $HOME/.local/bin/cliphist-rofi
+bindsym --no-repeat $mod+Shift+v exec qs ipc call clipboard toggle || $HOME/.local/bin/cliphist-rofi
 
 # Select an area, copy it to the clipboard, and open no extra UI afterward.
 bindsym --no-repeat $mod+Shift+s exec "$HOME/.local/bin/screenshot" clipboard
@@ -264,6 +269,18 @@ mode "special" {
 }
 
 bindsym $mod+z mode "special"
+
+### Window rules
+#
+# Fedora's 50-rules-browser.conf matches app_id "firefox", but Fedora's
+# Firefox reports org.mozilla.firefox, so repeat its rules here.
+for_window [app_id="^org[.]mozilla[.]firefox$"] inhibit_idle fullscreen
+for_window [app_id="^org[.]mozilla[.]firefox$" title="Sharing Indicator$"] floating enable
+# Picture-in-Picture video floats above the tiles on every workspace.
+for_window [app_id="^org[.]mozilla[.]firefox$" title="^Picture-in-Picture$"] floating enable, sticky enable
+
+# The tray applets' settings windows float.
+for_window [app_id="^(blueman-manager|nm-connection-editor)$"] floating enable
 
 # Include configs from 3 locations:
 #  - /usr/share/sway/config.d
