@@ -66,6 +66,8 @@ fi
 
 required_files=(
   alacritty/alacritty.toml
+  cinnamon/applets/ram@dotfiles/applet.js
+  cinnamon/applets/ram@dotfiles/metadata.json
   cinnamon/keybindings.dconf
   firefox/user.js
   firefox/userChrome.css
@@ -254,6 +256,7 @@ install_dotfiles() {
   local firefox_profile
   local backup_targets=(
     "${config_root}/alacritty"
+    "${target_home}/.local/share/cinnamon/applets/ram@dotfiles"
     "${config_root}/nvim"
     "${config_root}/quickshell"
     "${config_root}/rofi"
@@ -323,6 +326,9 @@ install_dotfiles() {
 
   mkdir -p -- "${config_root}/nvim"
   cp -a -- "${repo_root}/nvim/." "${config_root}/nvim/"
+
+  mkdir -p -- "${target_home}/.local/share/cinnamon/applets"
+  cp -a -- "${repo_root}/cinnamon/applets/ram@dotfiles" "${target_home}/.local/share/cinnamon/applets/"
 
   mkdir -p -- "${config_root}/quickshell"
   cp -a -- "${repo_root}/quickshell/." "${config_root}/quickshell/"
@@ -410,7 +416,7 @@ configure_appearance() {
 }
 
 configure_cinnamon() {
-  local keybindings_backup
+  local applets settings_backup
 
   # dconf is per user, so a test install into DOTFILES_TARGET_HOME would still
   # change the real desktop.
@@ -419,11 +425,29 @@ configure_cinnamon() {
     return
   fi
 
-  keybindings_backup="${backup_root}/cinnamon-keybindings.dconf"
-  dconf dump /org/cinnamon/desktop/keybindings/ > "$keybindings_backup"
-  printf 'Applying Sway-style Cinnamon keybindings (previous ones saved to %s)...\n' \
-    "$keybindings_backup"
+  settings_backup="${backup_root}/cinnamon.dconf"
+  dconf dump /org/cinnamon/ > "$settings_backup"
+  printf 'Applying Sway-style Cinnamon keybindings and key repeat (previous Cinnamon settings saved to %s)...\n' \
+    "$settings_backup"
   dconf load /org/cinnamon/ < "${repo_root}/cinnamon/keybindings.dconf"
+
+  # Put the RAM applet just left of the network icon, once. Applets in a panel
+  # zone are ordered by their position number, so the ones after it move up.
+  applets="$(gsettings get org.cinnamon enabled-applets)"
+  if [[ $applets != *ram@dotfiles* ]]; then
+    printf 'Adding the RAM applet to the panel...\n'
+    gsettings set org.cinnamon enabled-applets "$(python3 -I -c '
+import ast, sys
+applets = ast.literal_eval(sys.argv[1].removeprefix("@as "))
+ids = [int(a.rsplit(":", 1)[1]) for a in applets]
+right = sorted((int(a.split(":")[2]), a) for a in applets if a.split(":")[:2] == ["panel1", "right"])
+at = next((pos for pos, a in right if ":network@" in a), max((pos for pos, _ in right), default=-1) + 1)
+moved = {a: f"panel1:right:{pos + 1}:" + a.split(":", 3)[3] for pos, a in right if pos >= at}
+result = [moved.get(a, a) for a in applets]
+result.append(f"panel1:right:{at}:ram@dotfiles:{max(ids, default=0) + 1}")
+print(result)
+' "$applets")"
+  fi
 }
 
 reload_session() {

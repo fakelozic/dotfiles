@@ -1,5 +1,9 @@
-# Sway-style keybindings for Cinnamon, loaded with: dconf load /org/cinnamon/ < this file
+# Sway-style keybindings and key repeat for Cinnamon, loaded with: dconf load /org/cinnamon/ < this file
 # Keys not listed here keep Cinnamon's defaults.
+
+[desktop/peripherals/keyboard]
+delay=uint32 200
+repeat-interval=uint32 25
 
 [desktop/wm/preferences]
 mouse-button-modifier='<Super>'

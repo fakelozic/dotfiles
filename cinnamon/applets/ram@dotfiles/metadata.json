@@ -1,0 +1,6 @@
+{
+  "uuid": "ram@dotfiles",
+  "name": "RAM",
+  "description": "Memory use in percent, red above 80%. Click for System Monitor.",
+  "max-instances": 1
+}
