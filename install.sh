@@ -66,6 +66,7 @@ fi
 
 required_files=(
   alacritty/alacritty.toml
+  cinnamon/applets/gpaste-reloaded@feuerfuchs.eu/metadata.json
   cinnamon/applets/ram@dotfiles/applet.js
   cinnamon/applets/ram@dotfiles/metadata.json
   cinnamon/keybindings.dconf
@@ -112,6 +113,7 @@ install_packages() {
     blueman
     breeze-cursor-theme
     cliphist
+    gpaste
     curl
     eza
     fd-find
@@ -256,6 +258,7 @@ install_dotfiles() {
   local firefox_profile
   local backup_targets=(
     "${config_root}/alacritty"
+    "${target_home}/.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu"
     "${target_home}/.local/share/cinnamon/applets/ram@dotfiles"
     "${config_root}/nvim"
     "${config_root}/quickshell"
@@ -328,7 +331,7 @@ install_dotfiles() {
   cp -a -- "${repo_root}/nvim/." "${config_root}/nvim/"
 
   mkdir -p -- "${target_home}/.local/share/cinnamon/applets"
-  cp -a -- "${repo_root}/cinnamon/applets/ram@dotfiles" "${target_home}/.local/share/cinnamon/applets/"
+  cp -a -- "${repo_root}/cinnamon/applets/." "${target_home}/.local/share/cinnamon/applets/"
 
   mkdir -p -- "${config_root}/quickshell"
   cp -a -- "${repo_root}/quickshell/." "${config_root}/quickshell/"
@@ -416,7 +419,7 @@ configure_appearance() {
 }
 
 configure_cinnamon() {
-  local applets settings_backup
+  local applets cinnamon_pid gpaste_settings settings_backup settings_file uuid
 
   # dconf is per user, so a test install into DOTFILES_TARGET_HOME would still
   # change the real desktop.
@@ -431,11 +434,29 @@ configure_cinnamon() {
     "$settings_backup"
   dconf load /org/cinnamon/ < "${repo_root}/cinnamon/keybindings.dconf"
 
-  # Put the RAM applet just left of the network icon, once. Applets in a panel
-  # zone are ordered by their position number, so the ones after it move up.
-  applets="$(gsettings get org.cinnamon enabled-applets)"
-  if [[ $applets != *ram@dotfiles* ]]; then
-    printf 'Adding the RAM applet to the panel...\n'
+  # Put each applet just left of the network icon, once, so they end up in
+  # this order. Applets in a panel zone are ordered by their position number,
+  # so the ones after it move up.
+  for uuid in ram@dotfiles gpaste-reloaded@feuerfuchs.eu; do
+    applets="$(gsettings get org.cinnamon enabled-applets)"
+    if [[ $applets == *"$uuid"* ]]; then
+      continue
+    fi
+    # Cinnamon reads the GSettings schemas once, when it starts, and aborts
+    # when an applet asks for one it has not seen. GPaste's comes with the
+    # gpaste package, so a Cinnamon started before that has to restart first.
+    if [[ $uuid == gpaste-reloaded@feuerfuchs.eu ]]; then
+      cinnamon_pid="$(pgrep -xo cinnamon || true)"
+      if ! gsettings list-schemas | grep -qx org.gnome.GPaste; then
+        printf 'GPaste is not installed; not adding its applet to the panel.\n'
+        continue
+      elif [[ -n $cinnamon_pid ]] && (( $(stat -c %Y /usr/share/glib-2.0/schemas/gschemas.compiled) \
+        > $(printf '%(%s)T' -1) - $(ps -o etimes= -p "$cinnamon_pid") )); then
+        printf 'Cinnamon started before GPaste was installed; log out and back in, then run this again to add its applet.\n'
+        continue
+      fi
+    fi
+    printf 'Adding %s to the panel...\n' "$uuid"
     gsettings set org.cinnamon enabled-applets "$(python3 -I -c '
 import ast, sys
 applets = ast.literal_eval(sys.argv[1].removeprefix("@as "))
@@ -444,10 +465,31 @@ right = sorted((int(a.split(":")[2]), a) for a in applets if a.split(":")[:2] ==
 at = next((pos for pos, a in right if ":network@" in a), max((pos for pos, _ in right), default=-1) + 1)
 moved = {a: f"panel1:right:{pos + 1}:" + a.split(":", 3)[3] for pos, a in right if pos >= at}
 result = [moved.get(a, a) for a in applets]
-result.append(f"panel1:right:{at}:ram@dotfiles:{max(ids, default=0) + 1}")
+result.append(f"panel1:right:{at}:{sys.argv[2]}:{max(ids, default=0) + 1}")
 print(result)
-' "$applets")"
-  fi
+' "$applets" "$uuid")"
+  done
+
+  # GPaste Reloaded opens its history with Super+H, which snaps windows left
+  # here. Cinnamon writes the applet's settings file when it first loads it.
+  gpaste_settings="${config_root}/cinnamon/spices/gpaste-reloaded@feuerfuchs.eu"
+  for _ in {1..10}; do
+    compgen -G "${gpaste_settings}/*.json" >/dev/null && break
+    sleep 0.5
+  done
+  for settings_file in "${gpaste_settings}"/*.json; do
+    [[ -f $settings_file ]] || continue
+    python3 -I -c '
+import json, sys
+path = sys.argv[1]
+with open(path) as file:
+    settings = json.load(file)
+if settings["kb-show-history"]["value"] != "<Super><Shift>v":
+    settings["kb-show-history"]["value"] = "<Super><Shift>v"
+    with open(path, "w") as file:
+        json.dump(settings, file, indent=4)
+' "$settings_file"
+  done
 }
 
 reload_session() {
