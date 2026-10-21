@@ -66,6 +66,7 @@ fi
 
 required_files=(
   alacritty/alacritty.toml
+  cinnamon/keybindings.dconf
   firefox/user.js
   firefox/userChrome.css
   rofi/config.rasi
@@ -408,6 +409,23 @@ configure_appearance() {
   done
 }
 
+configure_cinnamon() {
+  local keybindings_backup
+
+  # dconf is per user, so a test install into DOTFILES_TARGET_HOME would still
+  # change the real desktop.
+  if [[ -n ${DOTFILES_TARGET_HOME:-} ]] || ! command -v cinnamon >/dev/null 2>&1 \
+    || ! command -v dconf >/dev/null 2>&1; then
+    return
+  fi
+
+  keybindings_backup="${backup_root}/cinnamon-keybindings.dconf"
+  dconf dump /org/cinnamon/desktop/keybindings/ > "$keybindings_backup"
+  printf 'Applying Sway-style Cinnamon keybindings (previous ones saved to %s)...\n' \
+    "$keybindings_backup"
+  dconf load /org/cinnamon/ < "${repo_root}/cinnamon/keybindings.dconf"
+}
+
 reload_session() {
   if ((skip_reload)); then
     return
@@ -437,6 +455,7 @@ if ((!files_only)); then
 fi
 
 install_dotfiles
+configure_cinnamon
 
 if ((!files_only)); then
   configure_session

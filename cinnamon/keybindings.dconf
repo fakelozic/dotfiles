@@ -1,0 +1,58 @@
+# Sway-style keybindings for Cinnamon, loaded with: dconf load /org/cinnamon/ < this file
+# Keys not listed here keep Cinnamon's defaults.
+
+[desktop/wm/preferences]
+mouse-button-modifier='<Super>'
+num-workspaces=10
+
+[desktop/keybindings]
+custom-list=['dotfiles-terminal', 'dotfiles-launcher']
+looking-glass-keybinding=@as []
+
+[desktop/keybindings/custom-keybindings/dotfiles-terminal]
+name='Terminal'
+command='alacritty'
+binding=['<Super>Return']
+
+[desktop/keybindings/custom-keybindings/dotfiles-launcher]
+name='App launcher'
+command='rofi -show drun'
+binding=['<Super>d']
+
+[desktop/keybindings/media-keys]
+area-screenshot-clip=['<Control><Shift>Print', '<Super><Shift>s']
+logout=['<Control><Alt>Delete', '<Super><Shift>e']
+screensaver=['<Control><Alt>l', 'XF86ScreenSaver', '<Super>Escape']
+
+[desktop/keybindings/wm]
+begin-resize=['<Alt>F8', '<Super>r']
+close=['<Alt>F4', '<Super><Shift>q']
+minimize=['<Super><Shift>minus']
+push-tile-down=['<Super>Down', '<Super>j']
+push-tile-left=['<Super>Left', '<Super>h']
+push-tile-right=['<Super>Right', '<Super>l']
+push-tile-up=['<Super>Up', '<Super>k']
+show-desktop=['<Control><Super>d']
+switch-windows=['<Alt>Tab', '<Super>Tab']
+switch-windows-backward=['<Shift><Alt>Tab', '<Shift><Super>Tab']
+toggle-fullscreen=['<Super>f']
+switch-to-workspace-1=['<Super>1']
+switch-to-workspace-2=['<Super>2']
+switch-to-workspace-3=['<Super>3']
+switch-to-workspace-4=['<Super>4']
+switch-to-workspace-5=['<Super>5']
+switch-to-workspace-6=['<Super>6']
+switch-to-workspace-7=['<Super>7']
+switch-to-workspace-8=['<Super>8']
+switch-to-workspace-9=['<Super>9']
+switch-to-workspace-10=['<Super>0']
+move-to-workspace-1=['<Super><Shift>1']
+move-to-workspace-2=['<Super><Shift>2']
+move-to-workspace-3=['<Super><Shift>3']
+move-to-workspace-4=['<Super><Shift>4']
+move-to-workspace-5=['<Super><Shift>5']
+move-to-workspace-6=['<Super><Shift>6']
+move-to-workspace-7=['<Super><Shift>7']
+move-to-workspace-8=['<Super><Shift>8']
+move-to-workspace-9=['<Super><Shift>9']
+move-to-workspace-10=['<Super><Shift>0']
