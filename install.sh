@@ -418,8 +418,43 @@ configure_appearance() {
   done
 }
 
+set_applet_setting() {
+  local uuid="$1" key="$2" value="$3"
+  local settings_dir="${config_root}/cinnamon/spices/${uuid}"
+
+  if [[ $(gsettings get org.cinnamon enabled-applets) != *"$uuid"* ]]; then
+    return
+  fi
+  # Cinnamon writes an applet's settings file when it first loads the applet,
+  # and does not notice later changes to it, so the applet is reloaded.
+  for _ in {1..10}; do
+    compgen -G "${settings_dir}/*.json" >/dev/null && break
+    sleep 0.5
+  done
+  if python3 -I -c '
+import json, sys
+key, value = sys.argv[1], json.loads(sys.argv[2])
+changed = False
+for path in sys.argv[3:]:
+    try:
+        with open(path) as file:
+            settings = json.load(file)
+    except FileNotFoundError:
+        continue
+    if key in settings and settings[key].get("value") != value:
+        settings[key]["value"] = value
+        with open(path, "w") as file:
+            json.dump(settings, file, indent=4)
+        changed = True
+sys.exit(0 if changed else 1)
+' "$key" "$value" "$settings_dir"/*.json; then
+    gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon \
+      --method org.Cinnamon.ReloadXlet "$uuid" APPLET >/dev/null || true
+  fi
+}
+
 configure_cinnamon() {
-  local applets cinnamon_pid gpaste_settings settings_backup settings_file uuid
+  local applets cinnamon_pid settings_backup uuid
 
   # dconf is per user, so a test install into DOTFILES_TARGET_HOME would still
   # change the real desktop.
@@ -471,25 +506,11 @@ print(result)
   done
 
   # GPaste Reloaded opens its history with Super+H, which snaps windows left
-  # here. Cinnamon writes the applet's settings file when it first loads it.
-  gpaste_settings="${config_root}/cinnamon/spices/gpaste-reloaded@feuerfuchs.eu"
-  for _ in {1..10}; do
-    compgen -G "${gpaste_settings}/*.json" >/dev/null && break
-    sleep 0.5
-  done
-  for settings_file in "${gpaste_settings}"/*.json; do
-    [[ -f $settings_file ]] || continue
-    python3 -I -c '
-import json, sys
-path = sys.argv[1]
-with open(path) as file:
-    settings = json.load(file)
-if settings["kb-show-history"]["value"] != "<Super><Shift>v":
-    settings["kb-show-history"]["value"] = "<Super><Shift>v"
-    with open(path, "w") as file:
-        json.dump(settings, file, indent=4)
-' "$settings_file"
-  done
+  # here. The window list takes Super+1-9 and Super+Shift+1-9 for its apps and
+  # the sound applet Super+Shift+S, which the workspace and screenshot keys use.
+  set_applet_setting gpaste-reloaded@feuerfuchs.eu kb-show-history '"<Super><Shift>v"'
+  set_applet_setting grouped-window-list@cinnamon.org super-num-hotkeys false
+  set_applet_setting sound@cinnamon.org keyOpen '""'
 }
 
 reload_session() {
