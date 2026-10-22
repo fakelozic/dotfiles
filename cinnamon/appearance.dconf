@@ -1,0 +1,21 @@
+# Gruvbox Matcha theme and Inter fonts for Cinnamon, loaded with: dconf load /org/ < this file
+# The theme is cinnamon/themes/Matcha-dark-gruvbox, installed to ~/.themes.
+
+[cinnamon/desktop/interface]
+gtk-theme='Matcha-dark-gruvbox'
+font-name='Inter 10'
+
+[cinnamon/theme]
+name='Matcha-dark-gruvbox'
+
+[cinnamon/desktop/wm/preferences]
+theme='Matcha-dark-gruvbox'
+titlebar-font='Inter Bold 10'
+
+[gnome/desktop/interface]
+gtk-theme='Matcha-dark-gruvbox'
+font-name='Inter 10'
+document-font-name='Inter 10'
+
+[nemo/desktop]
+font='Inter 9'

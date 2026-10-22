@@ -69,7 +69,11 @@ required_files=(
   cinnamon/applets/gpaste-reloaded@feuerfuchs.eu/metadata.json
   cinnamon/applets/ram@dotfiles/applet.js
   cinnamon/applets/ram@dotfiles/metadata.json
+  cinnamon/appearance.dconf
   cinnamon/keybindings.dconf
+  cinnamon/themes/Matcha-dark-gruvbox/index.theme
+  cinnamon/themes/Matcha-dark-gruvbox/cinnamon/cinnamon.css
+  cinnamon/themes/Matcha-dark-gruvbox/gtk-3.0/gtk.css
   firefox/user.js
   firefox/userChrome.css
   rofi/config.rasi
@@ -137,6 +141,7 @@ install_packages() {
     pavucontrol
     pciutils
     quickshell
+    rsms-inter-fonts
     ripgrep
     rofi
     slurp
@@ -260,6 +265,7 @@ install_dotfiles() {
     "${config_root}/alacritty"
     "${target_home}/.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu"
     "${target_home}/.local/share/cinnamon/applets/ram@dotfiles"
+    "${target_home}/.themes/Matcha-dark-gruvbox"
     "${config_root}/nvim"
     "${config_root}/quickshell"
     "${config_root}/rofi"
@@ -332,6 +338,11 @@ install_dotfiles() {
 
   mkdir -p -- "${target_home}/.local/share/cinnamon/applets"
   cp -a -- "${repo_root}/cinnamon/applets/." "${target_home}/.local/share/cinnamon/applets/"
+
+  # Replaced whole, so files a rebuilt theme no longer has do not linger.
+  rm -rf -- "${target_home}/.themes/Matcha-dark-gruvbox"
+  mkdir -p -- "${target_home}/.themes"
+  cp -a -- "${repo_root}/cinnamon/themes/Matcha-dark-gruvbox" "${target_home}/.themes/"
 
   mkdir -p -- "${config_root}/quickshell"
   cp -a -- "${repo_root}/quickshell/." "${config_root}/quickshell/"
@@ -468,6 +479,12 @@ configure_cinnamon() {
   printf 'Applying Sway-style Cinnamon keybindings and key repeat (previous Cinnamon settings saved to %s)...\n' \
     "$settings_backup"
   dconf load /org/cinnamon/ < "${repo_root}/cinnamon/keybindings.dconf"
+
+  # The GNOME keys are what GTK apps outside Cinnamon (and on Sway) read.
+  dconf dump /org/gnome/desktop/interface/ > "${backup_root}/gnome-interface.dconf"
+  dconf dump /org/nemo/desktop/ > "${backup_root}/nemo-desktop.dconf"
+  printf 'Applying the Gruvbox Matcha theme and Inter fonts...\n'
+  dconf load /org/ < "${repo_root}/cinnamon/appearance.dconf"
 
   # Put each applet just left of the network icon, once, so they end up in
   # this order. Applets in a panel zone are ordered by their position number,
