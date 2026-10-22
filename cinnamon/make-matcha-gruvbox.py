@@ -135,6 +135,64 @@ def recolour_png(p):
     (im if mode == "RGBA" else im.convert(mode)).save(p)
 
 
+# Cinnamon styles anything the theme leaves out from its own default theme,
+# whose corners are much rounder than Matcha's. Newer widgets such as the
+# shut down / log out dialog are not in Matcha at all.
+FALLBACK = Path("/usr/share/cinnamon/theme/cinnamon.css")
+
+
+def css_rules(css):
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", css):
+        yield [s.strip() for s in m.group(1).split(",")], m.group(2)
+
+
+def slight(radius):
+    # 25px and up are circles and pills (avatars, badges); leave those round.
+    def one(m):
+        v = float(m.group(1))
+        return m.group(0) if v >= 25 else f"{5 if v >= 16 else min(v, 3):g}px"
+
+    return re.sub(r"(\d+(?:\.\d+)?)px", one, radius)
+
+
+def slight_fallback_corners(theme_css):
+    themed = {s for sels, body in css_rules(theme_css) if "border-radius" in body for s in sels}
+    out = []
+    for sels, body in css_rules(FALLBACK.read_text()):
+        m = re.search(r"border-radius:\s*([^;]+);", body)
+        if not m or slight(m.group(1).strip()) == m.group(1).strip():
+            continue
+        sels = [s for s in sels if s not in themed]
+        if sels:
+            out.append(f"{', '.join(sels)} {{ border-radius: {slight(m.group(1).strip())}; }}")
+    return "\n".join(out)
+
+
+def shade(colour, dl):
+    h, l, s = hls(rgb(colour))
+    return hexc(from_hls(h, l + dl, s))
+
+
+DIALOG_CSS = f"""
+.dialog {{ background-color: #1d2021; color: #ebdbb2; border: 1px solid #3c3836; }}
+.dialog .dialog-button, .dialog .dialog-button:destructive-action, .dialog .dialog-button:default {{ color: #ebdbb2; background-color: #32302f; }}
+.dialog .dialog-button:focus {{ color: #ebdbb2; background-color: #32302f; box-shadow: inset 0 0 1px 1px rgba(235, 219, 178, 0.4); }}
+.dialog .dialog-button:hover {{ color: #ebdbb2; background-color: #3c3836; }}
+.dialog .dialog-button:active, .dialog .dialog-button:checked {{ color: #ebdbb2; background-color: #504945; }}
+.dialog .dialog-button:insensitive {{ color: rgba(235, 219, 178, 0.5); background-color: #282828; }}
+.dialog .dialog-button:default {{ color: #1d2021; background-color: {ACCENT}; }}
+.dialog .dialog-button:hover:default {{ color: #1d2021; background-color: {shade(ACCENT, 0.06)}; }}
+.dialog .dialog-button:active:default, .dialog .dialog-button:checked:default {{ color: #1d2021; background-color: {shade(ACCENT, -0.08)}; }}
+.dialog .dialog-button:destructive-action {{ color: #fbf1c7; background-color: #cc241d; }}
+.dialog .dialog-button:hover:destructive-action {{ color: #fbf1c7; background-color: #fb4934; }}
+.dialog .dialog-button:active:destructive-action, .dialog .dialog-button:checked:destructive-action {{ color: #fbf1c7; background-color: #9d0006; }}
+.dialog .dialog-button:insensitive:default, .dialog .dialog-button:insensitive:destructive-action {{ border-color: #3c3836; color: rgba(235, 219, 178, 0.5); background-color: #282828; }}
+.end-session-dialog .dialog-list .dialog-list-title {{ color: #fabd2f; background-color: rgba(250, 189, 47, 0.1); }}
+.dialog-list .dialog-list-box .dialog-list-item .dialog-list-item-description {{ color: #d5c4a1; }}
+"""
+
+
 if DST.exists():
     shutil.rmtree(DST)
 DST.mkdir(parents=True)
@@ -151,5 +209,15 @@ for f in DST.rglob("*"):
         f.write_text(recolour_text(f.read_text()))
     elif f.suffix == ".png":
         recolour_png(f)
+
+cinnamon_css = DST / "cinnamon/cinnamon.css"
+css = cinnamon_css.read_text()
+cinnamon_css.write_text(
+    css
+    + "\n/* Added by make-matcha-gruvbox.py: slight corners where Cinnamon's default theme shows through */\n"
+    + slight_fallback_corners(css)
+    + "\n\n/* Cinnamon's newer dialogs (shut down, log out, polkit), in Gruvbox */"
+    + DIALOG_CSS
+)
 
 print(f"built {DST} (accent {accent_name} {ACCENT})")

@@ -2279,3 +2279,66 @@ StScrollBar StButton#vhandle:active, StScrollBar StButton#hhandle:active {
   background-color: rgba(0, 0, 0, 0);
   border-radius: 0px;
 }
+
+/* Added by make-matcha-gruvbox.py: slight corners where Cinnamon's default theme shows through */
+#appmenu-search-entry, .prompt-dialog-password-entry { border-radius: 3px; }
+.sound-player StButton { border-radius: 3px; }
+.dialog .dialog-button, .dialog .dialog-button:destructive-action, .dialog .dialog-button:default { border-radius: 3px; }
+.popup-combobox-item, .popup-sub-menu .popup-menu-item, .popup-menu-item { border-radius: 3px; }
+.resize-popup, .workspace-switch-osd, .info-osd, .media-keys-osd, #LookingGlassDialog { border-radius: 3px; }
+.calendar-today-home-button, .calendar-today-home-button-enabled { border-radius: 3px; }
+.calendar-events-no-events-button { border-radius: 3px; }
+.calendar-event-button { border-radius: 3px; }
+.desklet:highlight { border-radius: 3px; }
+.desklet-with-borders { border-radius: 3px; }
+.desklet-header { border-radius: 3px 3px 0 0; }
+.photoframe-box { border-radius: 3px; }
+.dialog { border-radius: 5px; }
+.end-session-dialog .dialog-list .dialog-list-title { border-radius: 3px; }
+.polkit-dialog-user-combo { border-radius: 3px; }
+.audio-device-selection-dialog .audio-selection-box .audio-selection-device { border-radius: 3px; }
+.window-border { border-radius: 3px; }
+.candidate-popup-boxpointer { border-radius: 3px; }
+.candidate-box { border-radius: 3px; }
+.candidate-page-button-previous { border-radius: 3px 0px 0px 3px; }
+.candidate-page-button-next { border-radius: 0px 3px 3px 0px; }
+.vkeyboard-key { border-radius: 3px; }
+.vkeyboard-subkeys { border-radius: 3px; }
+.popup-menu-content { border-radius: 5px; }
+.popup-sub-menu { border-radius: 3px; }
+.popup-sub-menu .popup-menu-item:first-child { border-radius: 3px 3px 0 0; }
+.popup-sub-menu .popup-menu-item:last-child { border-radius: 0 0 3px 3px; }
+.popup-sub-menu .popup-menu-item:only-child, .popup-sub-menu .popup-menu-item:first-child:last-child { border-radius: 3px; }
+.popup-combo-menu { border-radius: 5px; }
+.media-keys-osd .level-bar { border-radius: 3px; }
+.appmenu-category-button-greyed, .appmenu-category-button-selected, .appmenu-category-button, .appmenu-application-button-selected, .appmenu-application-button, .appmenu-sidebar-button { border-radius: 3px; }
+.appmenu-sidebar { border-radius: 5px 0 0 5px; }
+.grouped-window-list-thumbnail-menu { border-radius: 3px; }
+.grouped-window-list-thumbnail-menu .item-box:first-child { border-radius: 3px 0 0 3px; }
+.grouped-window-list-thumbnail-menu .item-box:last-child { border-radius: 0 3px 3px 0; }
+.grouped-window-list-thumbnail-menu .item-box:outlined:first-child { border-radius: 3px 0 0 3px; }
+.grouped-window-list-thumbnail-menu .item-box:outlined:last-child { border-radius: 0 3px 3px 0; }
+.grouped-window-list-thumbnail-menu .item-box:selected:only-child, .grouped-window-list-thumbnail-menu .item-box:selected:first-child:last-child { border-radius: 3px; }
+.grouped-window-list-thumbnail-menu .item-box:selected:first-child { border-radius: 3px 0 0 3px; }
+.grouped-window-list-thumbnail-menu .item-box:selected:last-child { border-radius: 0 3px 3px 0; }
+.window-list-preview { border-radius: 3px; }
+.menu-category-button-greyed, .menu-category-button-selected, .menu-category-button, .menu-application-button-selected, .menu-application-button { border-radius: 3px; }
+.menu-favorites-box { border-radius: 3px; }
+.menu-favorites-button { border-radius: 3px; }
+
+/* Cinnamon's newer dialogs (shut down, log out, polkit), in Gruvbox */
+.dialog { background-color: #1d2021; color: #ebdbb2; border: 1px solid #3c3836; }
+.dialog .dialog-button, .dialog .dialog-button:destructive-action, .dialog .dialog-button:default { color: #ebdbb2; background-color: #32302f; }
+.dialog .dialog-button:focus { color: #ebdbb2; background-color: #32302f; box-shadow: inset 0 0 1px 1px rgba(235, 219, 178, 0.4); }
+.dialog .dialog-button:hover { color: #ebdbb2; background-color: #3c3836; }
+.dialog .dialog-button:active, .dialog .dialog-button:checked { color: #ebdbb2; background-color: #504945; }
+.dialog .dialog-button:insensitive { color: rgba(235, 219, 178, 0.5); background-color: #282828; }
+.dialog .dialog-button:default { color: #1d2021; background-color: #8ec07c; }
+.dialog .dialog-button:hover:default { color: #1d2021; background-color: #a0ca91; }
+.dialog .dialog-button:active:default, .dialog .dialog-button:checked:default { color: #1d2021; background-color: #76b360; }
+.dialog .dialog-button:destructive-action { color: #fbf1c7; background-color: #cc241d; }
+.dialog .dialog-button:hover:destructive-action { color: #fbf1c7; background-color: #fb4934; }
+.dialog .dialog-button:active:destructive-action, .dialog .dialog-button:checked:destructive-action { color: #fbf1c7; background-color: #9d0006; }
+.dialog .dialog-button:insensitive:default, .dialog .dialog-button:insensitive:destructive-action { border-color: #3c3836; color: rgba(235, 219, 178, 0.5); background-color: #282828; }
+.end-session-dialog .dialog-list .dialog-list-title { color: #fabd2f; background-color: rgba(250, 189, 47, 0.1); }
+.dialog-list .dialog-list-box .dialog-list-item .dialog-list-item-description { color: #d5c4a1; }
