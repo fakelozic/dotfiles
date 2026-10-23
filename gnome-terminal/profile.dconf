@@ -1,0 +1,14 @@
+# GNOME Terminal look matching Alacritty, loaded with: dconf load /org/gnome/terminal/ < this file
+# b1dcc9dd-... is GNOME Terminal's built-in default profile.
+
+[legacy]
+default-show-menubar=false
+theme-variant='dark'
+
+[legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9]
+background-color='rgb(23,25,26)'
+font='JetBrainsMono Nerd Font Mono 12'
+foreground-color='rgb(244,227,178)'
+scrollbar-policy='never'
+use-system-font=false
+use-theme-colors=false

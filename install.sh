@@ -76,6 +76,7 @@ required_files=(
   cinnamon/themes/Matcha-dark-gruvbox/gtk-3.0/gtk.css
   firefox/user.js
   firefox/userChrome.css
+  gnome-terminal/profile.dconf
   rofi/config.rasi
   scripts/cliphist-rofi
   scripts/lock-screen
@@ -530,6 +531,17 @@ print(result)
   set_applet_setting sound@cinnamon.org keyOpen '""'
 }
 
+configure_gnome_terminal() {
+  if [[ -n ${DOTFILES_TARGET_HOME:-} ]] || ! command -v gnome-terminal >/dev/null 2>&1 \
+    || ! command -v dconf >/dev/null 2>&1; then
+    return
+  fi
+
+  dconf dump /org/gnome/terminal/ > "${backup_root}/gnome-terminal.dconf"
+  printf 'Applying the GNOME Terminal profile...\n'
+  dconf load /org/gnome/terminal/ < "${repo_root}/gnome-terminal/profile.dconf"
+}
+
 reload_session() {
   if ((skip_reload)); then
     return
@@ -560,6 +572,7 @@ fi
 
 install_dotfiles
 configure_cinnamon
+configure_gnome_terminal
 
 if ((!files_only)); then
   configure_session

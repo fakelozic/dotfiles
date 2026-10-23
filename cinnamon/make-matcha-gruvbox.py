@@ -152,4 +152,8 @@ for f in DST.rglob("*"):
     elif f.suffix == ".png":
         recolour_png(f)
 
+# The panel matches Alacritty's background, a shade darker than bg0_h.
+for f in (DST / "cinnamon/common-assets/panel").glob("panel-*.svg"):
+    f.write_text(f.read_text().replace("fill:#1d2021;", "fill:#17191a;"))
+
 print(f"built {DST} (accent {accent_name} {ACCENT})")

@@ -1,7 +1,7 @@
 [window]
 padding = { x = 0, y = 0 }
 dynamic_padding = false
-opacity = 0.94
+opacity = 1
 blur = true
 decorations = "None"
 
@@ -28,7 +28,7 @@ style = { shape = "Block", blinking = "On" }
 blink_interval = 600
 
 [colors.primary]
-background = "#1d2021"
+background = "#17191A"
 foreground = "#ebdbb2"
 [colors.cursor]
 text = "#1d2021"
