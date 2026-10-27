@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Matcha-dark-gruvbox-charcoal
+Comment=A dark modern design theme
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=Matcha-dark-gruvbox-charcoal
+MetacityTheme=Matcha-dark-gruvbox-charcoal
+IconTheme=Qogir-manjaro
+CursorTheme=Qogir-manjaro
+ButtonLayout=menu:minimize,maximize,close

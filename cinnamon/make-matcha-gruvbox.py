@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
-"""Build a gruvbox-hard-dark recolour of Matcha-dark-pueril.
+"""Build a gruvbox-hard-dark or gruvbox-charcoal recolour of Matcha-dark-pueril.
 
 Shapes, spacing and assets stay Matcha; only colours change:
-  - greys are mapped by lightness onto the gruvbox neutral ramp
-  - the green accent family is shifted to the chosen gruvbox accent
-  - other saturated colours snap to the nearest gruvbox hue
+  - greys are mapped by lightness onto the variant's neutral ramp
+  - the green accent family is shifted to the chosen accent
+  - other saturated colours snap to the nearest palette hue
+gruvbox-charcoal also keeps its accent to solid lines and indicators: in CSS, an
+accent fill for a selected or pressed state becomes the menu-hover grey, and a
+translucent accent becomes the same translucency of the muted grey.
 The source theme (Matcha-dark-pueril from github.com/vinceliuice/Matcha-gtk-theme,
 GPL-3.0) must be in ~/.themes and is never modified. The result goes to
 cinnamon/themes/ next to this script, rebuilt from scratch on every run, and the
 installer copies it to ~/.themes.
 
-usage: make-matcha-gruvbox.py [accent]   accent = aqua (default) | yellow | orange | green
+usage: make-matcha-gruvbox.py [variant]
+  variant = aqua (default) | yellow | orange | green   gruvbox, with that accent
+          | charcoal                                    gruvbox-charcoal: neutral greys, accent #fb8500
 """
 import colorsys
 import re
@@ -21,16 +26,20 @@ from pathlib import Path
 from PIL import Image
 
 SRC = Path.home() / ".themes/Matcha-dark-pueril"
-ACCENTS = {"aqua": "#8ec07c", "yellow": "#fabd2f", "orange": "#fe8019", "green": "#b8bb26"}
+ACCENTS = {"aqua": "#8ec07c", "yellow": "#fabd2f", "orange": "#fe8019", "green": "#b8bb26",
+           "charcoal": "#fb8500"}
 accent_name = sys.argv[1] if len(sys.argv) > 1 else "aqua"
 ACCENT = ACCENTS[accent_name]
+CHARCOAL = accent_name == "charcoal"
 NAME = "Matcha-dark-gruvbox" if accent_name == "aqua" else f"Matcha-dark-gruvbox-{accent_name}"
 DST = Path(__file__).resolve().parent / "themes" / NAME
 
+# The GTK assets use pueril's green; the Cinnamon CSS uses Matcha's sea teal.
 MATCHA_ACCENT = "#97bb72"
+MATCHA_ACCENTS = [MATCHA_ACCENT, "#2eb398"] if CHARCOAL else [MATCHA_ACCENT]
 
 # (Matcha grey, gruvbox colour) anchors, interpolated by lightness.
-RAMP = [
+GRUVBOX_RAMP = [
     ("#000000", "#000000"),
     ("#1a1a1a", "#17191a"),
     ("#222222", "#1d2021"),  # bg0_h
@@ -48,8 +57,28 @@ RAMP = [
     ("#ffffff", "#fbf1c7"),  # fg0
 ]
 
-# Gruvbox bright colours other saturated colours snap to.
-PALETTE = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"]
+# (Matcha grey, gruvbox-charcoal colour) anchors: neutral greys built up from #17191a.
+CHARCOAL_RAMP = [
+    ("#000000", "#000000"),
+    ("#1a1a1a", "#17191a"),  # background
+    ("#222222", "#1f2122"),  # surface
+    ("#2d2d2d", "#2a2c2e"),  # raised
+    ("#3b3b3b", "#3a3d40"),  # border
+    ("#595959", "#5a5f63"),
+    ("#8c8c8c", "#899095"),  # muted text
+    ("#aaaaaa", "#dde1e3"),  # text
+    ("#ffffff", "#ffffff"),
+]
+RAMP = CHARCOAL_RAMP if CHARCOAL else GRUVBOX_RAMP
+
+# Colours other saturated colours snap to: gruvbox brights; gruvbox-charcoal uses
+# them too, with its accent as the orange.
+GRUVBOX_PALETTE = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"]
+CHARCOAL_PALETTE = ["#fb4934", "#fb8500", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"]
+PALETTE = CHARCOAL_PALETTE if CHARCOAL else GRUVBOX_PALETTE
+
+# Matcha's teal greys are further from neutral than its plain ones.
+GREY_CHROMA = 40 if CHARCOAL else 14
 
 
 def rgb(h):
@@ -69,7 +98,7 @@ def from_hls(h, l, s):
 
 RAMP_L = [(hls(rgb(a))[1], rgb(b)) for a, b in RAMP]
 PAL_HLS = [hls(rgb(p)) for p in PALETTE]
-MA_H, MA_L, MA_S = hls(rgb(MATCHA_ACCENT))
+MA_HLS = [hls(rgb(a)) for a in MATCHA_ACCENTS]
 GA_H, GA_L, GA_S = hls(rgb(ACCENT))
 
 
@@ -78,9 +107,20 @@ def hue_dist(a, b):
     return min(d, 1 - d)
 
 
+def accent_source(c):
+    """The Matcha accent c belongs to, as (h, l, s), or None."""
+    if max(c) - min(c) < GREY_CHROMA:
+        return None
+    h, _, s = hls(c)
+    for ma in MA_HLS:
+        if hue_dist(h, ma[0]) < 40 / 360 and s > 0.12:
+            return ma
+    return None
+
+
 def mapc(c):
     r, g, b = c
-    if max(c) - min(c) < 14:  # neutral grey
+    if max(c) - min(c) < GREY_CHROMA:  # neutral grey
         if max(c) <= 8 or min(c) >= 250:  # keep pure black (shadows) / white highlights
             return c
         _, l, _ = hls(c)
@@ -90,8 +130,10 @@ def mapc(c):
                 return tuple(round(a + (b2 - a) * t) for a, b2 in zip(c0, c1))
         return RAMP_L[-1][1]
     h, l, s = hls(c)
-    if hue_dist(h, MA_H) < 40 / 360 and s > 0.12:  # Matcha accent family
-        return from_hls(GA_H + (h - MA_H), l + (GA_L - MA_L), s * GA_S / MA_S)
+    ma = accent_source(c)
+    if ma:  # Matcha accent family
+        ma_h, ma_l, ma_s = ma
+        return from_hls(GA_H + (h - ma_h), l + (GA_L - ma_l), s * GA_S / ma_s)
     ph, pl, ps = min(PAL_HLS, key=lambda p: hue_dist(p[0], h))
     return from_hls(ph, l, ps)
 
@@ -105,16 +147,53 @@ HEX3 = re.compile(r"#([0-9a-fA-F]{3})(?=[;\"'),\s])")
 RGBA = re.compile(r"rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(,\s*[\d.]+\s*)?\)")
 
 
-def recolour_text(t):
-    t = HEX6.sub(lambda m: hexc(mapc(rgb(m.group(1)))), t)
-    t = HEX3.sub(lambda m: hexc(mapc(rgb(m.group(1)))), t)
+def recolour_text(t, mapper=None):
+    mapper = mapper or (lambda c, translucent: mapc(c))
+    t = HEX6.sub(lambda m: hexc(mapper(rgb(m.group(1)), False)), t)
+    t = HEX3.sub(lambda m: hexc(mapper(rgb(m.group(1)), False)), t)
 
     def rgba(m):
-        c = mapc(tuple(int(m.group(i)) for i in (1, 2, 3)))
         alpha = m.group(4)
+        c = mapper(tuple(int(m.group(i)) for i in (1, 2, 3)), bool(alpha) and float(alpha.strip(" ,")) < 1)
         return f"rgba({c[0]}, {c[1]}, {c[2]}{alpha})" if alpha else f"rgb({c[0]}, {c[1]}, {c[2]})"
 
     return RGBA.sub(rgba, t)
+
+
+# gruvbox-charcoal CSS: the accent only as a solid line or indicator.
+FILL_PROPS = {"background", "background-color", "background-gradient-start", "background-gradient-end",
+              "selection-background-color", "-arrow-background-color"}
+INDICATOR = re.compile(r"slider|level|badge|progress")
+SELECTED_GREY = mapc(rgb("#313e43"))  # what Matcha's menu hover becomes
+MUTED = rgb("#899095")
+BLOCK = re.compile(r"([^{}]*)\{([^{}]*)\}")
+
+
+def recolour_css_charcoal(t):
+    def value(sel, prop, val):
+        def mapper(c, translucent):
+            if accent_source(c):
+                if translucent:
+                    return MUTED
+                if prop in FILL_PROPS and not INDICATOR.search(sel + prop):
+                    return SELECTED_GREY
+            return mapc(c)
+        # A trailing ';' so HEX3 also matches a colour at the end of the value.
+        return recolour_text(val + ";", mapper)[:-1]
+
+    def block(m):
+        sel, body = m.group(1), m.group(2)
+        decls = []
+        for d in body.split(";"):
+            prop, colon, val = d.partition(":")
+            decls.append(prop + colon + value(sel, prop.strip(), val) if colon else recolour_text(d))
+        return recolour_text(sel) + "{" + ";".join(decls) + "}"
+
+    out, pos = [], 0
+    for m in BLOCK.finditer(t):
+        out += [recolour_text(t[pos:m.start()]), block(m)]
+        pos = m.end()
+    return "".join(out) + recolour_text(t[pos:])
 
 
 def recolour_png(p):
@@ -147,13 +226,16 @@ for d in ("gtk-2.0", "gtk-3.0", "gtk-4.0", "cinnamon", "metacity-1"):
 for f in DST.rglob("*"):
     if f.is_symlink() or not f.is_file() or f.name == "thumbnail.png":
         continue
-    if f.suffix in (".css", ".svg", ".xml", ".rc") or f.name == "gtkrc":
+    if CHARCOAL and f.suffix == ".css":
+        f.write_text(recolour_css_charcoal(f.read_text()))
+    elif f.suffix in (".css", ".svg", ".xml", ".rc") or f.name == "gtkrc":
         f.write_text(recolour_text(f.read_text()))
     elif f.suffix == ".png":
         recolour_png(f)
 
-# The panel matches Alacritty's background, a shade darker than bg0_h.
+# The panel matches Alacritty's background, a shade darker than Matcha's panel grey.
+panel_fill = hexc(mapc(rgb("#222222")))
 for f in (DST / "cinnamon/common-assets/panel").glob("panel-*.svg"):
-    f.write_text(f.read_text().replace("fill:#1d2021;", "fill:#17191a;"))
+    f.write_text(f.read_text().replace(f"fill:{panel_fill};", "fill:#17191a;"))
 
 print(f"built {DST} (accent {accent_name} {ACCENT})")
