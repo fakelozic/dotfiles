@@ -100,6 +100,7 @@ required_files=(
   walls/wall.png
   walls/wall-gruvbox.png
   walls/wallg.png
+  walls/wallg-gruvbox.png
   vim/vimrc
   zsh/.zshrc
   zsh/themes/gruvbox.zsh-theme
@@ -288,6 +289,7 @@ install_dotfiles() {
     "${target_home}/walls/wall.png"
     "${target_home}/walls/wall-gruvbox.png"
     "${target_home}/walls/wallg.png"
+    "${target_home}/walls/wallg-gruvbox.png"
   )
 
   firefox_profile="$(find_firefox_profile)"
@@ -355,6 +357,7 @@ install_dotfiles() {
   install -m0644 -- "${repo_root}/walls/wall.png" "${target_home}/walls/wall.png"
   install -m0644 -- "${repo_root}/walls/wall-gruvbox.png" "${target_home}/walls/wall-gruvbox.png"
   install -m0644 -- "${repo_root}/walls/wallg.png" "${target_home}/walls/wallg.png"
+  install -m0644 -- "${repo_root}/walls/wallg-gruvbox.png" "${target_home}/walls/wallg-gruvbox.png"
 
   if ((skip_nvidia)); then
     printf 'Not installing the NVIDIA-specific Sway environment file.\n'
