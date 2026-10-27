@@ -27,15 +27,16 @@ style = "Italic"
 style = { shape = "Block", blinking = "On" }
 blink_interval = 600
 
+# gruvbox-charcoal: gruvbox colours on neutral greys, cream text, #fb8500 accent.
 [colors.primary]
-background = "#17191A"
-foreground = "#ebdbb2"
+background = "#17191a"
+foreground = "#f2e8cf"
 [colors.cursor]
-text = "#1d2021"
+text = "#17191a"
 cursor = "#fabd2f"
 [colors.selection]
 text = "CellForeground"
-background = "#504945"
+background = "#4a4e52"
 [colors.normal]
 black = "#282828"
 red = "#cc241d"
@@ -53,4 +54,10 @@ yellow = "#fabd2f"
 blue = "#83a598"
 magenta = "#d3869b"
 cyan = "#8ec07c"
-white = "#ebdbb2"
+white = "#f2e8cf"
+
+# Colour 214 is #fb8500 (normally #ffaf00). Claude Code rounds the status
+# line's colours to the 256-colour palette, and the "xhigh" orange lands here.
+[[colors.indexed_colors]]
+index = 214
+color = "#fb8500"

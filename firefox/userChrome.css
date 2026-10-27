@@ -1,46 +1,59 @@
-/* Charcoal UI with restrained rounding, checked against Firefox 157.
+/* gruvbox-charcoal UI with restrained rounding, checked against Firefox 157.
  * Browser controls only. Keep Firefox's layout and keyboard focus behavior.
+ * Palette: bg #17191a, surface #1f2122, raised #2a2c2e, border #3a3d40,
+ * muted text #899095, text #dde1e3, accent #fb8500.
  */
 @media not (forced-colors) {
   :root {
     color-scheme: dark !important;
-    --toolbox-background-color: #101216 !important;
-    --toolbox-background-color-inactive: #101216 !important;
+    --toolbox-background-color: #17191a !important;
+    --toolbox-background-color-inactive: #17191a !important;
     --toolbox-background-image: none !important;
-    --toolbox-text-color: #e0e4ed !important;
-    --toolbox-text-color-inactive: #c0c6d2 !important;
-    --toolbar-background-color: #191c22 !important;
-    --toolbar-text-color: #e0e4ed !important;
-    --toolbar-field-background-color: #12151a !important;
-    --toolbar-field-background-color-focus: #171a20 !important;
-    --toolbar-field-text-color: #e0e4ed !important;
-    --toolbar-field-text-color-focus: #e0e4ed !important;
-    --toolbar-field-border-color: #454d5f !important;
-    --toolbar-field-border-color-focus: #a7b5e3 !important;
-    --focus-outline-color: #a7b5e3 !important;
+    --toolbox-text-color: #dde1e3 !important;
+    --toolbox-text-color-inactive: #899095 !important;
+    --toolbar-background-color: #17191a !important;
+    /* No lighter line between the toolbars and the page. Firefox draws it on
+     * the toolbox and on the page area too, so set it here for all of them.
+     */
+    --chrome-content-separator-color: transparent !important;
+    --toolbar-text-color: #dde1e3 !important;
+    --toolbar-field-background-color: #1f2122 !important;
+    --toolbar-field-background-color-focus: #1f2122 !important;
+    --toolbar-field-text-color: #dde1e3 !important;
+    --toolbar-field-text-color-focus: #dde1e3 !important;
+    --toolbar-field-border-color: #3a3d40 !important;
+    /* Accent: the orange Claude Code shows for xhigh effort, only ever solid.
+     * Firefox's own --color-accent-primary is left alone because it gets mixed
+     * in at 6-55% opacity for fills.
+     */
+    --toolbar-field-border-color-focus: #fb8500 !important;
+    --focus-outline-color: #fb8500 !important;
     --toolbarbutton-border-radius: 3px !important;
-    --toolbarbutton-background-color-hover: #272c37 !important;
-    --toolbarbutton-background-color-active: #313746 !important;
+    --toolbarbutton-background-color-hover: #2a2c2e !important;
+    --toolbarbutton-background-color-active: #3a3d40 !important;
     --tab-border-radius: 4px !important;
-    --tab-background-color-hover: #1d2129 !important;
-    --tab-border-color-hover: #2a313b !important;
-    --tab-background-color-selected: #272d37 !important;
-    --tab-border-color-selected: #59637b !important;
-    --tab-text-color: #c5cbd7 !important;
-    --tab-text-color-hover: #e0e4ed !important;
-    --tab-text-color-selected: #f2f4fa !important;
+    --tab-background-color-hover: #1f2122 !important;
+    --tab-border-color-hover: #2a2c2e !important;
+    --tab-background-color-selected: #2a2c2e !important;
+    --tab-border-color-selected: #3a3d40 !important;
+    --tab-text-color: #899095 !important;
+    --tab-text-color-hover: #dde1e3 !important;
+    --tab-text-color-selected: #dde1e3 !important;
     --tab-box-shadow-selected: none !important;
-    --tab-close-button-background-color-hover: #434c5e !important;
-    --tab-close-button-background-color-active: #525b70 !important;
+    --tab-close-button-background-color-hover: #3a3d40 !important;
+    --tab-close-button-background-color-active: #3a3d40 !important;
     --urlbar-border-radius: 4px !important;
     --urlbarview-border-radius: 6px !important;
     --panel-border-radius: 6px !important;
-    --panel-background-color: #1b1f26 !important;
-    --panel-text-color: #e0e4ed !important;
+    --panel-background-color: #1f2122 !important;
+    --panel-text-color: #dde1e3 !important;
     --panel-menuitem-border-radius: 3px !important;
-    --panel-border-color: #303641 !important;
-    --sidebar-background-color: #14171d !important;
-    --sidebar-text-color: #e0e4ed !important;
+    --panel-border-color: #3a3d40 !important;
+    --sidebar-background-color: #17191a !important;
+    --sidebar-text-color: #dde1e3 !important;
+    /* URL drop list: Firefox's lavender secondary text and grey separators. */
+    --urlbarview-text-color-secondary: #899095 !important;
+    --urlbarview-separator-color: #3a3d40 !important;
 
     /* Tighter than compact density: tab strip and nav bar 28px, down from 36px. */
     --tab-min-height: 24px !important;
@@ -63,18 +76,20 @@
   }
 
   #navigator-toolbox {
-    background-color: #101216 !important;
+    background-color: #17191a !important;
     background-image: none !important;
   }
 
   #nav-bar,
   #PersonalToolbar {
-    background-color: #191c22 !important;
+    background-color: #17191a !important;
     background-image: none !important;
   }
 
   .urlbar {
     --urlbar-background-border-radius: 4px !important;
+    /* No purple glow around the open drop list. */
+    --urlbar-background-box-shadow-open: none !important;
   }
 
   /* Search button in the URL field: Firefox makes it a 24px-radius pill in
@@ -82,9 +97,9 @@
    */
   .searchmode-switcher {
     --button-border-radius: 3px !important;
-    --button-background-color-muted: #272c37 !important;
-    --button-background-color-muted-hover: #313746 !important;
-    --button-background-color-muted-active: #434c5e !important;
+    --button-background-color-muted: #2a2c2e !important;
+    --button-background-color-muted-hover: #3a3d40 !important;
+    --button-background-color-muted-active: #3a3d40 !important;
   }
 
   /* Icons inside the URL field: lock/shield, permissions, star, page actions. */
@@ -131,17 +146,17 @@
 
   #tab-preview-panel {
     --panel-border-radius: 4px !important;
-    --panel-background-color: #1b1f26 !important;
-    --panel-text-color: #e0e4ed !important;
-    --panel-border-color: #303641 !important;
+    --panel-background-color: #1f2122 !important;
+    --panel-text-color: #dde1e3 !important;
+    --panel-border-color: #3a3d40 !important;
   }
 
   #tab-preview-panel .tab-preview-uri {
-    color: #a9b2c1 !important;
+    color: #899095 !important;
   }
 
   #tab-preview-panel .tab-preview-thumbnail-container > canvas {
-    border-color: #303641 !important;
+    border-color: #3a3d40 !important;
     border-radius: 4px !important;
   }
 
@@ -156,8 +171,83 @@
    * Not `panel`: the autoscroll, Ctrl+Tab and tour panels rely on their own.
    */
   menupopup {
-    --panel-background-color: #1b1f26 !important;
-    --panel-text-color: #e0e4ed !important;
-    --panel-border-color: #303641 !important;
+    --panel-background-color: #1f2122 !important;
+    --panel-text-color: #dde1e3 !important;
+    --panel-border-color: #3a3d40 !important;
   }
+}
+
+/* One row, like Helium's compact mode: buttons and a fixed-width URL field on
+ * the left, tabs right after it, profile/extensions/menu at the right end.
+ * The nav bar takes the whole row; the tab strip is laid over the spring after
+ * the URL field, so the right end holds however many buttons are showing.
+ * Only with horizontal tabs, and not while customizing the toolbars.
+ * Checked against Firefox 158.
+ */
+@media not (forced-colors) {
+  :root {
+    /* Width of the URL field. */
+    --uc-urlbar-width: 22vw;
+  }
+}
+
+@supports (anchor-name: --a) {
+  :root:not([customizing]) #navigator-toolbox:has(#tabbrowser-tabs[orient="horizontal"]) {
+    position: relative !important;
+
+    & > #nav-bar {
+      anchor-name: --uc-navbar;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    & #urlbar-container {
+      flex: 0 0 var(--uc-urlbar-width) !important;
+      width: var(--uc-urlbar-width) !important;
+    }
+
+    /* Springs before the URL field would push it away from the buttons. */
+    & #nav-bar-customization-target > toolbarspring:not(#urlbar-container ~ toolbarspring) {
+      display: none !important;
+    }
+
+    & #urlbar-container ~ toolbarspring {
+      anchor-name: --uc-tabs-gap;
+      flex: 1 1 0 !important;
+      max-width: none !important;
+    }
+
+    & > #TabsToolbar {
+      position: absolute !important;
+      left: anchor(--uc-tabs-gap left) !important;
+      right: anchor(--uc-tabs-gap right) !important;
+      top: anchor(--uc-navbar top) !important;
+      bottom: anchor(--uc-navbar bottom) !important;
+      margin: 0 !important;
+      min-height: 0 !important;
+      /* #nav-bar is position: relative and comes later, so it would paint over. */
+      z-index: 1 !important;
+    }
+
+    /* The drag gap before the tabs would sit between the URL field and the tabs. */
+    & #TabsToolbar .titlebar-spacer[type="pre-tabs"] {
+      display: none !important;
+    }
+
+    /* With many tabs, the spring after the new tab button (28px at least) and
+     * the drag gap after the tabs (40px) leave a hole before the right-end icons.
+     */
+    & #TabsToolbar .titlebar-spacer[type="post-tabs"] {
+      display: none !important;
+    }
+
+    & #TabsToolbar-customization-target > toolbarspring {
+      min-width: 0 !important;
+    }
+  }
+}
+
+/* No minimize/maximize/close: the window manager's shortcuts do those. */
+.titlebar-buttonbox-container {
+  display: none !important;
 }
