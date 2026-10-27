@@ -98,6 +98,7 @@ required_files=(
   tmux/gruvbox-theme.conf
   walls/burning-earth.png
   walls/wall.png
+  walls/wall-gruvbox.png
   walls/wallg.png
   vim/vimrc
   zsh/.zshrc
@@ -285,6 +286,7 @@ install_dotfiles() {
     "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
     "${target_home}/walls/burning-earth.png"
     "${target_home}/walls/wall.png"
+    "${target_home}/walls/wall-gruvbox.png"
     "${target_home}/walls/wallg.png"
   )
 
@@ -351,6 +353,7 @@ install_dotfiles() {
   mkdir -p -- "${target_home}/walls" "${target_home}/Pictures/Screenshots"
   install -m0644 -- "${repo_root}/walls/burning-earth.png" "${target_home}/walls/burning-earth.png"
   install -m0644 -- "${repo_root}/walls/wall.png" "${target_home}/walls/wall.png"
+  install -m0644 -- "${repo_root}/walls/wall-gruvbox.png" "${target_home}/walls/wall-gruvbox.png"
   install -m0644 -- "${repo_root}/walls/wallg.png" "${target_home}/walls/wallg.png"
 
   if ((skip_nvidia)); then

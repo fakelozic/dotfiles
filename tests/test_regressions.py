@@ -163,7 +163,7 @@ class BackupTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="dotfiles-home with spaces-") as name:
             target = Path(name)
             (target / "walls").mkdir()
-            wallpapers = ("burning-earth.png", "wall.png", "wallg.png")
+            wallpapers = ("burning-earth.png", "wall.png", "wall-gruvbox.png", "wallg.png")
             for wallpaper in wallpapers:
                 (target / "walls" / wallpaper).write_bytes(b"original " + wallpaper.encode())
             (target / ".vimrc").write_text("original Vim config A")

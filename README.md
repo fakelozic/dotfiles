@@ -102,7 +102,7 @@ If connector names differ, inspect them with `swaymsg -t get_outputs` and update
 - GNOME Terminal: when it is installed, the installer loads `gnome-terminal/profile.dconf` into its default profile: Alacritty's `#17191a` background, `#f4e3b2` text, JetBrainsMono Nerd Font Mono 12, no menu bar and no scrollbar. The previous settings are saved in the backup folder as `gnome-terminal.dconf`.
 - Shell aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`, `pstat` prints permissions, and `suup` upgrades DNF and Flatpak. `ls` and `cat` stay stock.
 
-The original `sve`, `tux`, `chaos`, and `orbit` wallpapers were removed. `wall.png`, `wallg.png`, and `burning-earth.png` remain.
+The original `sve`, `tux`, `chaos`, and `orbit` wallpapers were removed. `wall.png`, `wall-gruvbox.png`, `wallg.png`, and `burning-earth.png` remain. `wall.png` is recoloured to gruvbox-charcoal: `#17191a` background and `#f2e8cf` text; `wall-gruvbox.png` is the original, `#282828` with `#ebdbb2`.
 
 ## Editors
 
