@@ -2,7 +2,7 @@
 
 add_newline = false
 
-format = "$username$hostname$directory$git_branch$git_status$nodejs$rust$golang$python$docker_context$jobs$time$character"
+format = "$username$hostname$directory$git_branch$git_status$nodejs$rust$golang$python$docker_context$cmd_duration$jobs$time$character"
 
 palette = 'gruvbox_dark'
 
@@ -36,18 +36,22 @@ color_gray = '#928374'
 show_always = true
 style_user = "fg:color_orange bold"
 style_root = "fg:color_red bold"
-format = '[$user]($style) '
+format = '[$user]($style)'
+
+[hostname]
+style = "fg:color_orange bold"
+format = "[@$hostname]($style)"
 
 [directory]
 style = "fg:color_blue bold"
-format = "in [$path]($style) "
+format = " [|](fg:color_gray) [$path]($style) "
 truncation_length = 3
 truncation_symbol = "…/"
 
 [git_branch]
 symbol = " "
 style = "fg:color_aqua bold"
-format = "on [$symbol$branch]($style) "
+format = "[|](fg:color_gray) [$symbol$branch]($style) "
 
 [git_status]
 style = "fg:color_red bold"
@@ -56,40 +60,46 @@ format = '[$all_status$ahead_behind]($style) '
 [nodejs]
 symbol = " "
 style = "fg:color_green bold"
-format = "via [$symbol($version )]($style)"
+format = "[|](fg:color_gray) [$symbol($version )]($style)"
 
 [rust]
 symbol = " "
 style = "fg:color_orange bold"
-format = "via [$symbol($version )]($style)"
+format = "[|](fg:color_gray) [$symbol($version )]($style)"
 
 [golang]
 symbol = " "
 style = "fg:color_blue bold"
-format = "via [$symbol($version )]($style)"
+format = "[|](fg:color_gray) [$symbol($version )]($style)"
 
 [python]
 symbol = " "
 style = "fg:color_yellow bold"
-format = "via [$symbol($version )]($style)"
+format = "[|](fg:color_gray) [$symbol($version )]($style)"
 
 [docker_context]
 symbol = " "
 style = "fg:color_blue bold"
-format = "on [$symbol$context]($style) "
+format = "[|](fg:color_gray) [$symbol$context]($style) "
 
 [time]
 disabled = false
 time_format = "%R"
 style = "fg:color_gray"
-format = 'at [$time]($style) '
+format = '[| $time]($style) '
 
 [character]
 success_symbol = "[󰄾](bold fg:color_green)"
 error_symbol = "[󰄾](bold fg:color_red)"
 vicmd_symbol = "[󰄼](bold fg:color_yellow)"
 
+[cmd_duration]
+min_time = 2000
+style = "fg:color_yellow"
+format = "[|](fg:color_gray) [$duration]($style) "
+
 [jobs]
+number_threshold = 1
 symbol = " "
 style = "fg:color_red bold"
-format = "[$symbol$number]($style) "
+format = "[|](fg:color_gray) [$symbol$number]($style) "

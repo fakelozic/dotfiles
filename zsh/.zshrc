@@ -1,9 +1,16 @@
 export ZSH="$HOME/.oh-my-zsh"
 
-ZSH_THEME="gruvbox"
+# Starship draws the prompt when installed; otherwise use the bundled Gruvbox theme.
+if (( $+commands[starship] )); then
+  ZSH_THEME=""
+else
+  ZSH_THEME="gruvbox"
+fi
 plugins=(git)
 
 source "$ZSH/oh-my-zsh.sh"
+
+(( $+commands[starship] )) && eval "$(starship init zsh)"
 
 alias ezl="eza -lahg --icons --group-directories-first"
 alias ezo="eza -lahgo --icons --group-directories-first"
