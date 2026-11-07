@@ -79,6 +79,8 @@ fi
 
 required_files=(
   alacritty/alacritty.toml
+  fastfetch/config.jsonc
+  fastfetch/fedora.txt
   fontconfig/fonts.conf
   ghostty/config.ghostty
   ghostty/shaders/cursor_trail.glsl
@@ -114,6 +116,7 @@ install_packages() {
     breeze-cursor-theme
     curl
     eza
+    fastfetch
     fd-find
     fontconfig
     gcc
@@ -232,6 +235,7 @@ install_dotfiles() {
   local name
   local backup_targets=(
     "${config_root}/alacritty"
+    "${config_root}/fastfetch"
     "${config_root}/fontconfig/fonts.conf"
     "${config_root}/ghostty/config.ghostty"
     "${config_root}/ghostty/shaders/cursor_trail.glsl"
@@ -259,6 +263,8 @@ install_dotfiles() {
   done
 
   install_file "${repo_root}/alacritty/alacritty.toml" "${config_root}/alacritty/alacritty.toml"
+  install_file "${repo_root}/fastfetch/config.jsonc" "${config_root}/fastfetch/config.jsonc"
+  install_file "${repo_root}/fastfetch/fedora.txt" "${config_root}/fastfetch/fedora.txt"
   install_file "${repo_root}/fontconfig/fonts.conf" "${config_root}/fontconfig/fonts.conf"
   install_file "${repo_root}/ghostty/config.ghostty" "${config_root}/ghostty/config.ghostty"
   install_file "${repo_root}/ghostty/shaders/cursor_trail.glsl" "${config_root}/ghostty/shaders/cursor_trail.glsl"

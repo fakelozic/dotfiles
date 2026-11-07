@@ -113,6 +113,9 @@ class InstallTests(unittest.TestCase):
             ghostty = (target / ".config/ghostty/config.ghostty").read_text()
             self.assertIn(f"custom-shader = {target}/.config/ghostty/shaders/cursor_trail.glsl", ghostty)
             self.assertTrue((target / ".config/ghostty/shaders/cursor_trail.glsl").is_file())
+            for name in ("config.jsonc", "fedora.txt"):
+                self.assertEqual((target / ".config/fastfetch" / name).read_bytes(),
+                                 (REPO / "fastfetch" / name).read_bytes())
 
             (target / ".vimrc").write_text("edited Vim config B")
             second = self.install(target)

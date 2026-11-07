@@ -27,7 +27,7 @@ It installs the Fedora packages the configuration uses:
 
 - Ghostty, from the `scottames/ghostty` COPR repository;
 - Alacritty, tmux, Zsh, Neovim and Vim;
-- `ripgrep`, `eza`, `bat`, `fd` and `wl-clipboard`;
+- `ripgrep`, `eza`, `bat`, `fd`, `fastfetch` and `wl-clipboard`;
 - Papirus icons, Breeze cursors and the Inter font;
 - the C compiler, `make`, `unzip`, `tree-sitter-cli`, Node.js and npm that the editor setup needs.
 
@@ -112,6 +112,7 @@ These are in `system/` and are applied only with `--system`. Any file that diffe
   - a cursor trail drawn by `ghostty/shaders/cursor_trail.glsl`. Adjust `DURATION` and `OPACITY` at the top of that file.
 - **Alacritty:** the same Gruvbox Dark Hard colours, kept as a spare terminal.
 - **tmux:** the prefix is `Ctrl+Space`, with `Ctrl+A` as a second prefix; press either twice to pass it to the program in the pane. The status bar uses stock Gruvbox Dark Hard, and the session chip turns from yellow to purple while the prefix is active.
+- **fastfetch:** `fastfetch/config.jsonc` shows a Fedora logo in Gruvbox blue next to three sections (system, desktop, hardware), with Nerd Font icons and Gruvbox key colours. Run `fastfetch`.
 - **Zsh:** Oh My Zsh with the `git` plugin, plus a Starship prompt: `user | dir | git | duration | jobs | time`, separated by grey pipes.
   - Aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`; `pstat` prints permissions; `suup` upgrades DNF and Flatpak.
 
