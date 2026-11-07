@@ -6,11 +6,15 @@ repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 target_home="${DOTFILES_TARGET_HOME:-$HOME}"
 if [[ -n ${DOTFILES_TARGET_HOME:-} ]]; then
   config_root="${target_home}/.config"
+  data_root="${target_home}/.local/share"
   state_root="${target_home}/.local/state"
 else
   config_root="${XDG_CONFIG_HOME:-${target_home}/.config}"
+  data_root="${XDG_DATA_HOME:-${target_home}/.local/share}"
   state_root="${XDG_STATE_HOME:-${target_home}/.local/state}"
 fi
+# Only for tests: install the system tweaks under this directory instead of /.
+system_root="${DOTFILES_SYSTEM_ROOT:-}"
 timestamp="$(date +%Y%m%d-%H%M%S)"
 backup_root=""
 download_temp_dir=""
@@ -26,16 +30,23 @@ files_only=0
 skip_nvidia=0
 skip_shell_change=0
 skip_reload=0
+skip_kde=0
+with_system=0
 
 usage() {
   cat <<'EOF'
 Usage: ./install.sh [options]
 
 Options:
-  --files-only         Install dotfiles only; skip packages, downloads and services.
-  --skip-nvidia        Do not install NVIDIA drivers or its Sway environment file.
+  --files-only         Install dotfiles only; skip packages, downloads, the login
+                       shell and KDE settings.
+  --skip-kde           Copy the KDE files but do not change Plasma's settings.
+  --system             Also apply the system tweaks in system/ (uses sudo): zram and
+                       swap settings, MGLRU, plocate exclusions, parallel dnf
+                       downloads and the login screen wallpaper.
+  --skip-nvidia        Do not install NVIDIA drivers.
   --skip-shell-change  Do not make Zsh the login shell.
-  --skip-reload        Do not reload a currently running Sway/tmux session.
+  --skip-reload        Do not reload a running tmux server.
   -h, --help           Show this help.
 
 For installer testing, DOTFILES_TARGET_HOME may point at a temporary directory.
@@ -45,6 +56,8 @@ EOF
 while (($#)); do
   case "$1" in
     --files-only) files_only=1 ;;
+    --skip-kde) skip_kde=1 ;;
+    --system) with_system=1 ;;
     --skip-nvidia) skip_nvidia=1 ;;
     --skip-shell-change) skip_shell_change=1 ;;
     --skip-reload) skip_reload=1 ;;
@@ -66,42 +79,23 @@ fi
 
 required_files=(
   alacritty/alacritty.toml
-  cinnamon/applets/gpaste-reloaded@feuerfuchs.eu/metadata.json
-  cinnamon/applets/ram@dotfiles/applet.js
-  cinnamon/applets/ram@dotfiles/metadata.json
-  cinnamon/appearance.dconf
-  cinnamon/keybindings.dconf
-  cinnamon/themes/Matcha-dark-gruvbox/index.theme
-  cinnamon/themes/Matcha-dark-gruvbox/cinnamon/cinnamon.css
-  cinnamon/themes/Matcha-dark-gruvbox/gtk-3.0/gtk.css
-  firefox/user.js
-  firefox/userChrome.css
-  gnome-terminal/profile.dconf
-  rofi/config.rasi
-  scripts/cliphist-rofi
-  scripts/lock-screen
-  scripts/nightlight
-  scripts/pick-color
-  scripts/screenshot
+  fontconfig/fonts.conf
+  ghostty/config.ghostty
+  ghostty/shaders/cursor_trail.glsl
+  kde/BreezeCharcoal.colors
+  kde/build-folder-icons
+  kde/plasmoids/org.fak3.desktops/metadata.json
+  kde/plasmoids/org.fak3.ramindicator/metadata.json
+  kde/shortcuts.py
   scripts/check-editor-deps
-  quickshell/shell.qml
-  sway/config
-  sway/config.d/90-bar.conf
-  sway/config.d/90-swayidle.conf
-  sway/config.d/95-autostart-policykit-agent.conf
-  sway/config.d/95-gruvbox-rice.conf
-  sway/environment
-  swaylock/config
-  systemd/user/cliphist-image.service
-  systemd/user/cliphist-text.service
+  starship.toml
+  system/sysctl.d/99-desktop-memory.conf
+  system/tmpfiles.d/mglru-min-ttl.conf
+  system/zram-generator.conf
   tmux/tmux.conf
   tmux/gruvbox-theme.conf
-  walls/burning-earth.png
-  walls/wall.png
-  walls/wall-gruvbox.png
-  walls/wallg.png
-  walls/wallg-gruvbox.png
   vim/vimrc
+  walls/cat-wall.jpeg
   zsh/.zshrc
   zsh/themes/gruvbox.zsh-theme
 )
@@ -117,57 +111,38 @@ install_packages() {
   local packages=(
     alacritty
     bat
-    blueman
     breeze-cursor-theme
-    cliphist
-    gpaste
     curl
     eza
     fd-find
     fontconfig
     gcc
+    ghostty
     git-core
-    gnome-calculator
-    gnome-keyring
-    gnome-keyring-pam
-    grim
-    ImageMagick
-    jq
-    lxqt-policykit
     make
     neovim
     nodejs
     npm
-    network-manager-applet
-    NetworkManager-tui
     papirus-icon-theme
-    pavucontrol
     pciutils
-    quickshell
+    python3-dbus
     rsms-inter-fonts
     ripgrep
-    rofi
-    slurp
-    sway
-    swaybg
-    sway-config-fedora
-    sway-systemd
-    swayidle
-    swaylock
     tar
     tmux
     tree-sitter-cli
     unzip
     vim-enhanced
-    wireplumber
     wl-clipboard
-    wlsunset
-    xdg-desktop-portal-gtk
-    xdg-desktop-portal-wlr
     xz
     zsh
   )
 
+  # Ghostty is not in Fedora's repositories; scottames/ghostty packages it.
+  if ! dnf repolist --enabled 2>/dev/null | grep -q 'scottames:ghostty'; then
+    printf 'Enabling the Ghostty COPR repository...\n'
+    sudo dnf copr enable -y scottames/ghostty
+  fi
   printf 'Installing Fedora packages...\n'
   sudo dnf install -y "${packages[@]}"
 }
@@ -194,7 +169,7 @@ install_nvidia_if_needed() {
 }
 
 install_nerd_font() {
-  local font_dir="${target_home}/.local/share/fonts"
+  local font_dir="${data_root}/fonts"
   download_temp_dir="$(mktemp -d)"
 
   printf 'Installing JetBrainsMono Nerd Font...\n'
@@ -241,64 +216,39 @@ install_file() {
   install -Dm0644 -- "$source_path" "$destination_path"
 }
 
-# Prints the profile directory Firefox opens by default, or nothing when
-# Firefox has not been started yet.
-find_firefox_profile() {
-  local root relative
-
-  # Firefox keeps using ~/.mozilla when it exists; newer installs use XDG.
-  for root in "${target_home}/.mozilla/firefox" "${config_root}/mozilla/firefox"; do
-    [[ -r ${root}/profiles.ini ]] || continue
-    # Each [Install...] section names the profile that installation opens.
-    relative="$(awk '/^\[/ { install = /^\[Install/ }
-      install && /^Default=/ { sub(/\r$/, ""); print substr($0, 9); exit }' "${root}/profiles.ini")"
-    [[ -n $relative ]] || continue
-    [[ $relative == /* ]] || relative="${root}/${relative}"
-    if [[ -d $relative ]]; then
-      printf '%s\n' "$relative"
-      return 0
-    fi
-  done
-  return 0
-}
+# KDE keeps these in single files that the settings below change in place.
+kde_config_files=(
+  kdeglobals
+  kwinrc
+  breezerc
+  kcminputrc
+  ksplashrc
+  kscreenlockerrc
+  kglobalshortcutsrc
+  plasma-org.kde.plasma.desktop-appletsrc
+)
 
 install_dotfiles() {
-  local firefox_profile
+  local name
   local backup_targets=(
     "${config_root}/alacritty"
-    "${target_home}/.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu"
-    "${target_home}/.local/share/cinnamon/applets/ram@dotfiles"
-    "${target_home}/.themes/Matcha-dark-gruvbox"
+    "${config_root}/fontconfig/fonts.conf"
+    "${config_root}/ghostty/config.ghostty"
+    "${config_root}/ghostty/shaders/cursor_trail.glsl"
     "${config_root}/nvim"
-    "${config_root}/quickshell"
-    "${config_root}/rofi"
-    "${config_root}/sway"
-    "${config_root}/swaylock"
-    "${config_root}/systemd/user/cliphist-image.service"
-    "${config_root}/systemd/user/cliphist-text.service"
+    "${config_root}/starship.toml"
     "${config_root}/tmux"
-    "${target_home}/.local/bin/cliphist-rofi"
-    "${target_home}/.local/bin/lock-screen"
-    "${target_home}/.local/bin/nightlight"
-    "${target_home}/.local/bin/pick-color"
-    "${target_home}/.local/bin/screenshot"
+    "${data_root}/color-schemes/BreezeCharcoal.colors"
+    "${data_root}/plasma/plasmoids/org.fak3.desktops"
+    "${data_root}/plasma/plasmoids/org.fak3.ramindicator"
     "${target_home}/.vimrc"
     "${target_home}/.zshrc"
     "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
-    "${target_home}/walls/burning-earth.png"
-    "${target_home}/walls/wall.png"
-    "${target_home}/walls/wall-gruvbox.png"
-    "${target_home}/walls/wallg.png"
-    "${target_home}/walls/wallg-gruvbox.png"
+    "${target_home}/walls/cat-wall.jpeg"
   )
-
-  firefox_profile="$(find_firefox_profile)"
-  if [[ -n $firefox_profile ]]; then
-    backup_targets+=(
-      "${firefox_profile}/chrome/userChrome.css"
-      "${firefox_profile}/user.js"
-    )
-  fi
+  for name in "${kde_config_files[@]}"; do
+    backup_targets+=("${config_root}/${name}")
+  done
 
   mkdir -p -- "${state_root}/dotfiles-backups"
   backup_root="$(mktemp -d "${state_root}/dotfiles-backups/${timestamp}-XXXXXX")"
@@ -309,259 +259,216 @@ install_dotfiles() {
   done
 
   install_file "${repo_root}/alacritty/alacritty.toml" "${config_root}/alacritty/alacritty.toml"
-  install_file "${repo_root}/rofi/config.rasi" "${config_root}/rofi/config.rasi"
-  install -Dm0755 -- "${repo_root}/scripts/cliphist-rofi" "${target_home}/.local/bin/cliphist-rofi"
-  install -Dm0755 -- "${repo_root}/scripts/lock-screen" "${target_home}/.local/bin/lock-screen"
-  install -Dm0755 -- "${repo_root}/scripts/nightlight" "${target_home}/.local/bin/nightlight"
-  install -Dm0755 -- "${repo_root}/scripts/pick-color" "${target_home}/.local/bin/pick-color"
-  install -Dm0755 -- "${repo_root}/scripts/screenshot" "${target_home}/.local/bin/screenshot"
-  install_file "${repo_root}/vim/vimrc" "${target_home}/.vimrc"
-  install_file "${repo_root}/sway/config" "${config_root}/sway/config"
-  install_file "${repo_root}/sway/config.d/90-bar.conf" "${config_root}/sway/config.d/90-bar.conf"
-  install_file "${repo_root}/sway/config.d/90-swayidle.conf" "${config_root}/sway/config.d/90-swayidle.conf"
-  install_file "${repo_root}/sway/config.d/95-autostart-policykit-agent.conf" "${config_root}/sway/config.d/95-autostart-policykit-agent.conf"
-  install_file "${repo_root}/sway/config.d/95-gruvbox-rice.conf" "${config_root}/sway/config.d/95-gruvbox-rice.conf"
-  install_file "${repo_root}/swaylock/config" "${config_root}/swaylock/config"
-  sed -i "s|^image=.*|image=${target_home}/walls/burning-earth.png|" "${config_root}/swaylock/config"
-  install_file "${repo_root}/systemd/user/cliphist-image.service" "${config_root}/systemd/user/cliphist-image.service"
-  install_file "${repo_root}/systemd/user/cliphist-text.service" "${config_root}/systemd/user/cliphist-text.service"
+  install_file "${repo_root}/fontconfig/fonts.conf" "${config_root}/fontconfig/fonts.conf"
+  install_file "${repo_root}/ghostty/config.ghostty" "${config_root}/ghostty/config.ghostty"
+  install_file "${repo_root}/ghostty/shaders/cursor_trail.glsl" "${config_root}/ghostty/shaders/cursor_trail.glsl"
+  # Ghostty needs the shader as a full path.
+  sed -i "s|^custom-shader = ~/|custom-shader = ${target_home}/|" "${config_root}/ghostty/config.ghostty"
+  install_file "${repo_root}/starship.toml" "${config_root}/starship.toml"
   install_file "${repo_root}/tmux/tmux.conf" "${config_root}/tmux/tmux.conf"
   install_file "${repo_root}/tmux/gruvbox-theme.conf" "${config_root}/tmux/gruvbox-theme.conf"
+  install_file "${repo_root}/vim/vimrc" "${target_home}/.vimrc"
   install_file "${repo_root}/zsh/.zshrc" "${target_home}/.zshrc"
   install_file "${repo_root}/zsh/themes/gruvbox.zsh-theme" "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
-
-  if [[ -n $firefox_profile ]]; then
-    install_file "${repo_root}/firefox/userChrome.css" "${firefox_profile}/chrome/userChrome.css"
-    install_file "${repo_root}/firefox/user.js" "${firefox_profile}/user.js"
-    printf 'Installed the Firefox theme; restart Firefox to see changes.\n'
-  else
-    printf 'No Firefox profile found; skipping the Firefox theme. Start Firefox once, then run this again.\n'
-  fi
+  install_file "${repo_root}/kde/BreezeCharcoal.colors" "${data_root}/color-schemes/BreezeCharcoal.colors"
 
   mkdir -p -- "${config_root}/nvim"
   cp -a -- "${repo_root}/nvim/." "${config_root}/nvim/"
 
-  mkdir -p -- "${target_home}/.local/share/cinnamon/applets"
-  cp -a -- "${repo_root}/cinnamon/applets/." "${target_home}/.local/share/cinnamon/applets/"
+  # Replaced whole, so files a newer version no longer has do not linger.
+  for name in org.fak3.desktops org.fak3.ramindicator; do
+    rm -rf -- "${data_root}/plasma/plasmoids/${name}"
+    mkdir -p -- "${data_root}/plasma/plasmoids"
+    cp -a -- "${repo_root}/kde/plasmoids/${name}" "${data_root}/plasma/plasmoids/"
+  done
 
-  # Replaced whole, so files a rebuilt theme no longer has do not linger.
-  rm -rf -- "${target_home}/.themes/Matcha-dark-gruvbox"
-  mkdir -p -- "${target_home}/.themes"
-  cp -a -- "${repo_root}/cinnamon/themes/Matcha-dark-gruvbox" "${target_home}/.themes/"
-
-  mkdir -p -- "${config_root}/quickshell"
-  cp -a -- "${repo_root}/quickshell/." "${config_root}/quickshell/"
-
-  mkdir -p -- "${target_home}/walls" "${target_home}/Pictures/Screenshots"
-  install -m0644 -- "${repo_root}/walls/burning-earth.png" "${target_home}/walls/burning-earth.png"
-  install -m0644 -- "${repo_root}/walls/wall.png" "${target_home}/walls/wall.png"
-  install -m0644 -- "${repo_root}/walls/wall-gruvbox.png" "${target_home}/walls/wall-gruvbox.png"
-  install -m0644 -- "${repo_root}/walls/wallg.png" "${target_home}/walls/wallg.png"
-  install -m0644 -- "${repo_root}/walls/wallg-gruvbox.png" "${target_home}/walls/wallg-gruvbox.png"
-
-  if ((skip_nvidia)); then
-    printf 'Not installing the NVIDIA-specific Sway environment file.\n'
-  elif command -v lspci >/dev/null 2>&1 && lspci -n 2>/dev/null | grep -qi '10de:'; then
-    install_file "${repo_root}/sway/environment" "${config_root}/sway/environment"
+  if [[ -f /usr/share/icons/Papirus-Dark/index.theme ]]; then
+    "${repo_root}/kde/build-folder-icons" bluegrey "${data_root}/icons"
   else
-    printf 'No NVIDIA device detected; not installing the NVIDIA-specific Sway environment file.\n'
+    printf 'Papirus is not installed; skipping the bluegrey folder icons.\n'
+  fi
+
+  mkdir -p -- "${target_home}/walls"
+  install -m0644 -- "${repo_root}/walls/cat-wall.jpeg" "${target_home}/walls/cat-wall.jpeg"
+}
+
+# Writes one KDE setting and tells running applications about it.
+kde_set() {
+  local file="$1" group="$2" key="$3" value="$4"
+  local group_args=() parts=() part
+  IFS='/' read -r -a parts <<< "$group"
+  for part in "${parts[@]}"; do
+    group_args+=(--group "$part")
+  done
+  kwriteconfig6 --notify --file "$file" "${group_args[@]}" --key "$key" "$value"
+}
+
+configure_kde() {
+  local wallpaper="${target_home}/walls/cat-wall.jpeg"
+  local font_inter='Inter,10.5,-1,5,400,0,0,0,0,0,0,0,0,0,0,1'
+  local count
+
+  if ((skip_kde)) || [[ -n ${DOTFILES_TARGET_HOME:-} ]]; then
+    return
+  fi
+  if [[ ${XDG_CURRENT_DESKTOP:-} != *KDE* ]]; then
+    printf 'Not running inside Plasma; run this again from a Plasma session to apply the KDE settings.\n'
+    return
+  fi
+
+  printf 'Applying KDE settings...\n'
+  # Look: Breeze Dark panels, the Breeze Charcoal colour scheme with a steel-blue
+  # accent taken from the wallpaper, Breeze cursors and bluegrey Papirus folders.
+  plasma-apply-desktoptheme breeze-dark >/dev/null || true
+  if [[ $(kreadconfig6 --group General --key ColorScheme) != BreezeCharcoal ]]; then
+    plasma-apply-colorscheme BreezeCharcoal >/dev/null || true
+  fi
+  if [[ $(kreadconfig6 --group General --key AccentColor) != '71,119,145' ]]; then
+    plasma-apply-colorscheme --accent-color '#477791' >/dev/null || true
+    # Saved as the accent too, so applying a colour scheme later keeps it.
+    kde_set kdeglobals General AccentColor 71,119,145
+    kde_set kdeglobals General LastUsedCustomAccentColor 71,119,145
+  fi
+  plasma-apply-cursortheme breeze_cursors >/dev/null || true
+  if [[ -d ${data_root}/icons/Papirus-Dark-Bluegrey ]]; then
+    /usr/libexec/plasma-changeicons Papirus-Dark-Bluegrey >/dev/null 2>&1 || true
+  fi
+
+  # Fonts: Inter for the interface, JetBrains Mono for fixed width.
+  kde_set kdeglobals General font "$font_inter"
+  kde_set kdeglobals General menuFont "$font_inter"
+  kde_set kdeglobals General toolBarFont "$font_inter"
+  kde_set kdeglobals General smallestReadableFont 'Inter,9,-1,5,400,0,0,0,0,0,0,0,0,0,0,1'
+  kde_set kdeglobals General fixed 'JetBrainsMono Nerd Font,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1'
+  kde_set kdeglobals WM activeFont "$font_inter"
+
+  # Ghostty is the terminal Dolphin and other apps open.
+  kde_set kdeglobals General TerminalApplication 'ghostty --gtk-single-instance=true'
+  kde_set kdeglobals General TerminalService com.mitchellh.ghostty.desktop
+
+  # Windows: focus follows the mouse, no window borders, instant desktop switching.
+  kde_set kwinrc Windows FocusPolicy FocusFollowsMouse
+  kde_set kwinrc org.kde.kdecoration2 BorderSize None
+  kde_set kwinrc org.kde.kdecoration2 BorderSizeAuto false
+  kde_set kwinrc Plugins blurEnabled true
+  kde_set kwinrc Plugins fadedesktopEnabled true
+  kde_set kwinrc Plugins slideEnabled false
+  kde_set kwinrc Effect-fadedesktop AnimationDuration 0
+  kde_set kwinrc Effect-blur BlurStrength 11
+  kde_set kwinrc Effect-blur NoiseStrength 6
+  kde_set kwinrc Effect-translucency MoveResize 91
+  kde_set kwinrc TabBox HighlightWindows false
+  kde_set breezerc Common OutlineEnabled false
+  kde_set breezerc Common ShadowSize ShadowSmall
+  kde_set breezerc Style MenuOpacity 85
+  kde_set breezerc Windeco TitleAlignment AlignLeft
+  kde_set ksplashrc KSplash Engine none
+  kde_set ksplashrc KSplash Theme None
+
+  # Input: fast key repeat; flat pointer acceleration for the Razer Viper Mini.
+  kde_set kcminputrc Keyboard RepeatDelay 250
+  kde_set kcminputrc Keyboard RepeatRate 35
+  kde_set kcminputrc 'Libinput/5426/138/Razer Razer Viper Mini' PointerAccelerationProfile 1
+
+  # Six virtual desktops in one row.
+  kde_set kwinrc Desktops Rows 1
+  count="$(busctl --user get-property org.kde.KWin /VirtualDesktopManager \
+    org.kde.KWin.VirtualDesktopManager count 2>/dev/null | awk '{print $2}')"
+  while [[ -n $count ]] && ((count < 6)); do
+    busctl --user call org.kde.KWin /VirtualDesktopManager \
+      org.kde.KWin.VirtualDesktopManager createDesktop us "$count" "Desktop $((count + 1))" || break
+    count=$((count + 1))
+  done
+  busctl --user call org.kde.KWin /KWin org.kde.KWin reconfigure >/dev/null 2>&1 || true
+
+  # Wallpaper on the desktop and the lock screen.
+  plasma-apply-wallpaperimage "$wallpaper" >/dev/null || true
+  kde_set kscreenlockerrc 'Greeter/Wallpaper/org.kde.image/General' Image "file://${wallpaper}"
+  kde_set kscreenlockerrc 'Greeter/Wallpaper/org.kde.image/General' PreviewImage "file://${wallpaper}"
+
+  # Sway-style keys: Meta+1-6, Meta+Shift+1-6, Meta+Shift+Q, Meta+F, Meta+Return.
+  python3 "${repo_root}/kde/shortcuts.py" || printf 'Could not apply the shortcuts; continuing.\n' >&2
+
+  # KDE's GTK bridge writes GTK's colours only when it starts, so restart it to
+  # give GTK apps the new accent.
+  busctl --user call org.kde.kded6 /kded org.kde.kded6 unloadModule s gtkconfig >/dev/null 2>&1 || true
+  busctl --user call org.kde.kded6 /kded org.kde.kded6 loadModule s gtkconfig >/dev/null 2>&1 || true
+}
+
+# Copies one file into the system, keeping a dated copy of a different original.
+system_install() {
+  local source_path="$1" destination="${system_root}$2"
+  if [[ -f $destination ]] && cmp -s "$source_path" "$destination"; then
+    return
+  fi
+  if [[ -f $destination ]]; then
+    sudo cp -a -- "$destination" "${destination}.bak-${timestamp}"
+  fi
+  sudo install -Dm0644 -- "$source_path" "$destination"
+  printf '  installed %s\n' "$2"
+}
+
+configure_system() {
+  local updatedb="${system_root}/etc/updatedb.conf"
+  local dnf_conf="${system_root}/etc/dnf/dnf.conf"
+  local login_conf="${system_root}/etc/plasmalogin.conf"
+  local login_wallpaper=/var/lib/plasmalogin/wallpapers/cat-wall.jpeg
+
+  printf 'Applying system tweaks (sudo)...\n'
+  # Memory: zram as the main swap, tuned for it, plus MGLRU thrashing protection.
+  system_install "${repo_root}/system/zram-generator.conf" /etc/systemd/zram-generator.conf
+  system_install "${repo_root}/system/sysctl.d/99-desktop-memory.conf" /etc/sysctl.d/99-desktop-memory.conf
+  system_install "${repo_root}/system/tmpfiles.d/mglru-min-ttl.conf" /etc/tmpfiles.d/mglru-min-ttl.conf
+
+  # plocate's nightly index skips build output and version control folders.
+  if [[ -f $updatedb ]] && ! grep -q '^PRUNENAMES' "$updatedb"; then
+    printf 'PRUNENAMES = ".git .hg .svn node_modules target .venv __pycache__"\n' | sudo tee -a "$updatedb" >/dev/null
+    printf '  added PRUNENAMES to /etc/updatedb.conf\n'
+  fi
+
+  # Faster dnf downloads.
+  if [[ -f $dnf_conf ]] && ! grep -q '^max_parallel_downloads' "$dnf_conf"; then
+    printf 'max_parallel_downloads=10\n' | sudo tee -a "$dnf_conf" >/dev/null
+    printf '  added max_parallel_downloads=10 to /etc/dnf/dnf.conf\n'
+  fi
+
+  # Login screen wallpaper (Plasma Login Manager).
+  if [[ -f $login_conf ]]; then
+    system_install "${repo_root}/walls/cat-wall.jpeg" "$login_wallpaper"
+    if [[ -z $system_root ]]; then
+      sudo restorecon "$login_wallpaper" 2>/dev/null || true
+    fi
+    if ! grep -qx "Image=file://${login_wallpaper}" "$login_conf"; then
+      sudo cp -a -- "$login_conf" "${login_conf}.bak-${timestamp}"
+      if grep -q '^Image=' "$login_conf"; then
+        sudo sed -i "s|^Image=.*|Image=file://${login_wallpaper}|" "$login_conf"
+      else
+        printf '[Greeter][Wallpaper][org.kde.image][General]\nImage=file://%s\n' "$login_wallpaper" \
+          | sudo tee -a "$login_conf" >/dev/null
+      fi
+      printf '  set the login screen wallpaper\n'
+    fi
+  fi
+
+  if [[ -z $system_root ]]; then
+    sudo sysctl --quiet --system
+    sudo systemd-tmpfiles --create /etc/tmpfiles.d/mglru-min-ttl.conf
+    printf 'The zram size change, if any, takes effect after a reboot.\n'
   fi
 }
 
-configure_session() {
-  local current_user service
-  local session_services=(
-    cliphist-text.service
-    cliphist-image.service
-  )
+configure_shell() {
+  local current_user
   current_user="$(id -un)"
-
-  if ((!skip_shell_change)); then
+  if ((!skip_shell_change)) && [[ $(getent passwd "$current_user" | cut -d: -f7) != */zsh ]]; then
     printf 'Setting Zsh as the login shell for %s...\n' "$current_user"
     sudo usermod --shell /usr/bin/zsh "$current_user"
   fi
-
-  # Quickshell draws the bar and shows notifications, started by
-  # sway/config.d/90-bar.conf. A Waybar user service would add a second bar.
-  # SwayNC is masked as well as disabled, because D-Bus would otherwise start
-  # it again for the first notification and keep Quickshell from receiving any.
-  systemctl --user daemon-reload
-  systemctl --user disable --now waybar.service >/dev/null 2>&1 || true
-  systemctl --user disable --now swaync.service >/dev/null 2>&1 || true
-  systemctl --user mask swaync.service >/dev/null 2>&1 || true
-  systemctl --user enable "${session_services[@]}"
-
-  # These services need a running Sway session. From another desktop or a
-  # console they cannot start yet, so enabling them is all that can be done.
-  if [[ -z ${SWAYSOCK:-} ]]; then
-    printf 'Not running inside Sway; the session services start at the next Sway login.\n'
-    return
-  fi
-
-  # Quickshell's notification server needs the bus name these daemons take.
-  systemctl --user stop dunst.service mako.service >/dev/null 2>&1 || true
-  systemctl --user start "${session_services[@]}"
-  for service in "${session_services[@]}"; do
-    if ! systemctl --user is-active --quiet "$service"; then
-      printf 'Service failed to start: %s\n' "$service" >&2
-      systemctl --user --no-pager status "$service" >&2 || true
-      return 1
-    fi
-  done
-}
-
-configure_appearance() {
-  local schema=org.gnome.desktop.interface
-  local setting key value
-  local settings=(
-    'color-scheme prefer-dark'
-    'cursor-theme breeze_cursors'
-    'cursor-size 24'
-    'icon-theme Papirus-Dark'
-  )
-
-  if ! command -v gsettings >/dev/null 2>&1; then
-    printf 'gsettings not found; skipping GTK appearance settings.\n' >&2
-    return
-  fi
-
-  # GTK applications read these instead of Sway's cursor theme. The GTK theme
-  # itself is left as it is.
-  printf 'Applying dark GTK appearance, Breeze cursors and Papirus icons...\n'
-  for setting in "${settings[@]}"; do
-    read -r key value <<< "$setting"
-    if ! gsettings set "$schema" "$key" "$value"; then
-      printf 'Could not set %s %s; continuing.\n' "$schema" "$key" >&2
-    fi
-  done
-}
-
-set_applet_setting() {
-  local uuid="$1" key="$2" value="$3"
-  local settings_dir="${config_root}/cinnamon/spices/${uuid}"
-
-  if [[ $(gsettings get org.cinnamon enabled-applets) != *"$uuid"* ]]; then
-    return
-  fi
-  # Cinnamon writes an applet's settings file when it first loads the applet,
-  # and does not notice later changes to it, so the applet is reloaded.
-  for _ in {1..10}; do
-    compgen -G "${settings_dir}/*.json" >/dev/null && break
-    sleep 0.5
-  done
-  if python3 -I -c '
-import json, sys
-key, value = sys.argv[1], json.loads(sys.argv[2])
-changed = False
-for path in sys.argv[3:]:
-    try:
-        with open(path) as file:
-            settings = json.load(file)
-    except FileNotFoundError:
-        continue
-    if key in settings and settings[key].get("value") != value:
-        settings[key]["value"] = value
-        with open(path, "w") as file:
-            json.dump(settings, file, indent=4)
-        changed = True
-sys.exit(0 if changed else 1)
-' "$key" "$value" "$settings_dir"/*.json; then
-    gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon \
-      --method org.Cinnamon.ReloadXlet "$uuid" APPLET >/dev/null || true
-  fi
-}
-
-configure_cinnamon() {
-  local applets cinnamon_pid settings_backup uuid
-
-  # dconf is per user, so a test install into DOTFILES_TARGET_HOME would still
-  # change the real desktop.
-  if [[ -n ${DOTFILES_TARGET_HOME:-} ]] || ! command -v cinnamon >/dev/null 2>&1 \
-    || ! command -v dconf >/dev/null 2>&1; then
-    return
-  fi
-
-  settings_backup="${backup_root}/cinnamon.dconf"
-  dconf dump /org/cinnamon/ > "$settings_backup"
-  printf 'Applying Sway-style Cinnamon keybindings and key repeat (previous Cinnamon settings saved to %s)...\n' \
-    "$settings_backup"
-  dconf load /org/cinnamon/ < "${repo_root}/cinnamon/keybindings.dconf"
-
-  # The GNOME keys are what GTK apps outside Cinnamon (and on Sway) read.
-  dconf dump /org/gnome/desktop/interface/ > "${backup_root}/gnome-interface.dconf"
-  dconf dump /org/nemo/desktop/ > "${backup_root}/nemo-desktop.dconf"
-  printf 'Applying the Gruvbox Matcha theme and Inter fonts...\n'
-  dconf load /org/ < "${repo_root}/cinnamon/appearance.dconf"
-
-  # Put each applet just left of the network icon, once, so they end up in
-  # this order. Applets in a panel zone are ordered by their position number,
-  # so the ones after it move up.
-  for uuid in ram@dotfiles gpaste-reloaded@feuerfuchs.eu; do
-    applets="$(gsettings get org.cinnamon enabled-applets)"
-    if [[ $applets == *"$uuid"* ]]; then
-      continue
-    fi
-    # Cinnamon reads the GSettings schemas once, when it starts, and aborts
-    # when an applet asks for one it has not seen. GPaste's comes with the
-    # gpaste package, so a Cinnamon started before that has to restart first.
-    if [[ $uuid == gpaste-reloaded@feuerfuchs.eu ]]; then
-      cinnamon_pid="$(pgrep -xo cinnamon || true)"
-      if ! gsettings list-schemas | grep -qx org.gnome.GPaste; then
-        printf 'GPaste is not installed; not adding its applet to the panel.\n'
-        continue
-      elif [[ -n $cinnamon_pid ]] && (( $(stat -c %Y /usr/share/glib-2.0/schemas/gschemas.compiled) \
-        > $(printf '%(%s)T' -1) - $(ps -o etimes= -p "$cinnamon_pid") )); then
-        printf 'Cinnamon started before GPaste was installed; log out and back in, then run this again to add its applet.\n'
-        continue
-      fi
-    fi
-    printf 'Adding %s to the panel...\n' "$uuid"
-    gsettings set org.cinnamon enabled-applets "$(python3 -I -c '
-import ast, sys
-applets = ast.literal_eval(sys.argv[1].removeprefix("@as "))
-ids = [int(a.rsplit(":", 1)[1]) for a in applets]
-right = sorted((int(a.split(":")[2]), a) for a in applets if a.split(":")[:2] == ["panel1", "right"])
-at = next((pos for pos, a in right if ":network@" in a), max((pos for pos, _ in right), default=-1) + 1)
-moved = {a: f"panel1:right:{pos + 1}:" + a.split(":", 3)[3] for pos, a in right if pos >= at}
-result = [moved.get(a, a) for a in applets]
-result.append(f"panel1:right:{at}:{sys.argv[2]}:{max(ids, default=0) + 1}")
-print(result)
-' "$applets" "$uuid")"
-  done
-
-  # GPaste Reloaded opens its history with Super+H, which snaps windows left
-  # here. The window list takes Super+1-9 and Super+Shift+1-9 for its apps and
-  # the sound applet Super+Shift+S, which the workspace and screenshot keys use.
-  set_applet_setting gpaste-reloaded@feuerfuchs.eu kb-show-history '"<Super><Shift>v"'
-  set_applet_setting grouped-window-list@cinnamon.org super-num-hotkeys false
-  set_applet_setting sound@cinnamon.org keyOpen '""'
-}
-
-configure_gnome_terminal() {
-  if [[ -n ${DOTFILES_TARGET_HOME:-} ]] || ! command -v gnome-terminal >/dev/null 2>&1 \
-    || ! command -v dconf >/dev/null 2>&1; then
-    return
-  fi
-
-  dconf dump /org/gnome/terminal/ > "${backup_root}/gnome-terminal.dconf"
-  printf 'Applying the GNOME Terminal profile...\n'
-  dconf load /org/gnome/terminal/ < "${repo_root}/gnome-terminal/profile.dconf"
 }
 
 reload_session() {
   if ((skip_reload)); then
     return
-  fi
-
-  if [[ -n ${SWAYSOCK:-} ]] && command -v swaymsg >/dev/null 2>&1; then
-    swaymsg reload >/dev/null
-    # Sway runs exec lines only at login. A running Quickshell reloads its
-    # files by itself, but it can reload while they are half copied, so it is
-    # restarted instead.
-    if command -v quickshell >/dev/null 2>&1; then
-      quickshell kill >/dev/null 2>&1 || true
-      swaymsg exec quickshell >/dev/null
-    fi
   fi
   if command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
     tmux source-file "${config_root}/tmux/tmux.conf"
@@ -577,18 +484,20 @@ if ((!files_only)); then
 fi
 
 install_dotfiles
-configure_cinnamon
-configure_gnome_terminal
 
 if ((!files_only)); then
-  configure_session
-  configure_appearance
+  configure_shell
+  configure_kde
+fi
+
+if ((with_system)); then
+  configure_system
 fi
 
 reload_session
 
 printf '\nDone. Your previous configuration is in:\n  %s\n' "$backup_root"
-printf 'Log out and select Sway from the login screen.\n'
+printf 'Open new Ghostty windows to see terminal changes. Some KDE changes need a new login.\n'
 
 if ((!files_only && !skip_nvidia)) && command -v mokutil >/dev/null 2>&1 \
   && mokutil --sb-state 2>/dev/null | grep -qi enabled; then

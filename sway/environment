@@ -1,5 +1,0 @@
-GBM_BACKEND=nvidia-drm
-__GLX_VENDOR_LIBRARY_NAME=nvidia
-MOZ_ENABLE_WAYLAND=1
-SWAY_EXTRA_ARGS="--unsupported-gpu"
-LIBVA_DRIVER_NAME=nvidia

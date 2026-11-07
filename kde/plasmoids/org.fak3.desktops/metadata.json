@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Id": "org.fak3.desktops",
+        "Name": "Desktops",
+        "Description": "Minimal virtual desktop switcher: numbers, current one in a soft pill",
+        "Icon": "virtual-desktops",
+        "Category": "Windows and Tasks",
+        "Authors": [ { "Name": "fak3" } ],
+        "License": "GPL-2.0-or-later",
+        "Version": "1.0"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

@@ -1,0 +1,34 @@
+# tmux integration - send save-buffer command
+keybind = cmd+s=text:\x01\x73
+
+# tmux prefix to toggle zoom on current pane
+keybind = cmd+b=text:\x01\x7a
+
+# aesthetics
+background-opacity = 1
+background-blur = 50
+theme = Gruvbox Dark Hard
+macos-titlebar-style = hidden
+# no title bar (move windows with Meta+drag)
+window-decoration = none
+
+# typography
+font-size=13
+font-thicken=true
+font-thicken-strength=1
+# no ligatures (keep => != === as separate characters)
+font-feature = -calt
+font-feature = -liga
+font-feature = -dlig
+adjust-cell-height=1
+
+# padding
+window-padding-x = 0
+window-padding-y = 0
+window-padding-balance = false
+
+# no scrollbar widget (scrolling still works)
+scrollbar = never
+
+# cursor trail (GPU shader; tweak DURATION/OPACITY inside the file)
+custom-shader = ~/.config/ghostty/shaders/cursor_trail.glsl

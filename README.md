@@ -1,46 +1,119 @@
-# Fedora Sway Gruvbox dotfiles
+# Fedora KDE Plasma Gruvbox dotfiles
 
-This repository recreates the current Fedora Sway setup: a restrained Gruvbox palette, a 26 px Quickshell bar on the BenQ display with its own notifications, lock screen and power menu, Alacritty, Neovim, minimal Vim, tmux, native Oh My Zsh prompt and Breeze cursors.
-
-![Sway Gruvbox desktop with minimal Vim and the Rofi power menu](assets/desktop.png)
-
-Desktop preview from before the move to Quickshell, using a public Lua example in Vim and the old Rofi power menu.
-
-Firefox gets a compact dark toolbar theme of its own. It is charcoal, not Gruvbox; see [Firefox](#firefox).
+This repository recreates my Fedora KDE Plasma setup. It mixes Windows and Sway: windows float and you switch apps from the taskbar, but there are six separate workspaces driven from the keyboard. The desktop uses Breeze Charcoal colours with a steel-blue accent taken from the wallpaper, bluegrey Papirus folders and the Inter font. The terminals and editors use stock Gruvbox Dark Hard with JetBrains Mono and no ligatures.
 
 ## Install on Fedora
 
-From a fresh Fedora installation:
+From a fresh Fedora KDE installation:
 
 ```bash
 sudo dnf install -y git
 git clone https://github.com/fakelozic/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-./install.sh
+./install.sh            # add --system for the system tweaks below
 ```
 
-The script is safe to run again. Before writing configuration, it copies existing targets to:
+Run it from inside a Plasma session so it can apply the KDE settings. From anywhere else it installs the files and tells you to run it again inside Plasma.
+
+The script is safe to run again. Before writing anything, it copies the existing files to:
 
 ```text
 ~/.local/state/dotfiles-backups/YYYYMMDD-HHMMSS-XXXXXX/
 ```
 
-Each run gets a unique backup directory. Existing wallpaper files are backed up alongside the configuration.
+That includes the KDE config files it changes (`kdeglobals`, `kwinrc`, `kglobalshortcutsrc` and others). Each run gets its own backup directory.
 
-It installs the Fedora packages used by the configuration, including `ripgrep`, `eza`, `bat`, Sway, Quickshell, Alacritty, tmux, Neovim, Vim, Breeze cursors and screenshot/clipboard utilities. It also installs JetBrainsMono Nerd Font, the Inter font and Oh My Zsh. The installer also installs the C compiler, `make`, `unzip`, `tree-sitter-cli`, Node.js and npm needed by the editor setup. It checks for Neovim 0.12.0 or later and `tree-sitter-cli` 0.26.1 or later before replacing configuration. Starship is not installed or activated because the Gruvbox Oh My Zsh theme provides the prompt directly; `starship.toml` remains in the repository as an optional configuration.
+It installs the Fedora packages the configuration uses:
 
-The package list also covers the NetworkManager and Bluetooth tray applets, GNOME Keyring for application secrets and the Papirus icon theme. After installing, the script sets GTK applications to dark mode with Breeze cursors and Papirus icons; the GTK theme itself is set only where Cinnamon is installed (see Cinnamon below).
+- Ghostty, from the `scottames/ghostty` COPR repository;
+- Alacritty, tmux, Zsh, Neovim and Vim;
+- `ripgrep`, `eza`, `bat`, `fd` and `wl-clipboard`;
+- Papirus icons, Breeze cursors and the Inter font;
+- the C compiler, `make`, `unzip`, `tree-sitter-cli`, Node.js and npm that the editor setup needs.
 
-The installer can be run from any desktop or from a console. Quickshell is the notification daemon, so SwayNC is disabled and masked. The clipboard services are always enabled. They are started and checked immediately only inside a running Sway session; otherwise they start at the next Sway login.
+It also installs JetBrainsMono Nerd Font and Oh My Zsh, and makes Zsh your login shell. Before replacing any configuration it checks for Neovim 0.12.0 or later and `tree-sitter-cli` 0.26.1 or later.
 
-Useful installer options:
+Starship is not in Fedora's repositories, so the installer only copies `starship.toml`. Install Starship yourself with `curl -sS https://starship.rs/install.sh | sh`. Until it's installed, the bundled Gruvbox Oh My Zsh theme draws a nearly identical prompt.
+
+Installer options:
 
 ```bash
-./install.sh --files-only
+./install.sh --files-only         # only copy files: no packages, login shell or KDE settings
+./install.sh --skip-kde           # copy the KDE files but leave Plasma's settings alone
+./install.sh --system             # also apply system/ (asks for sudo)
 ./install.sh --skip-nvidia
 ./install.sh --skip-shell-change
-./install.sh --skip-reload
+./install.sh --skip-reload        # do not reload a running tmux
 ```
+
+## KDE Plasma
+
+The installer applies these settings to the running session:
+
+- **Look:**
+  - Breeze Dark Plasma style and the Breeze Charcoal colour scheme (`kde/BreezeCharcoal.colors`), with the accent saved as steel blue `#477791`;
+  - Breeze cursors and window decorations with no borders;
+  - a small shadow and no splash screen.
+- **Folder icons:** `kde/build-folder-icons` builds `Papirus-Dark-Bluegrey`, which is Papirus-Dark with bluegrey folders, in `~/.local/share/icons`. It copies the icons rather than linking them, so Flatpak apps show them too. Run it with another Papirus colour (for example `kde/build-folder-icons teal`) to make a different variant.
+- **Fonts:** Inter 10.5 for the interface (9 for the smallest text) and JetBrains Mono 11 for fixed width. `fontconfig/fonts.conf` makes the generic `monospace` font JetBrainsMonoNL, the no-ligatures build.
+- **Windows:**
+  - focus follows the mouse;
+  - six virtual desktops in one row, switching instantly;
+  - blur on, and the slide effect off.
+- **Keyboard:** 250 ms repeat delay and 35 repeats per second. The Razer Viper Mini gets flat pointer acceleration.
+- **Wallpaper:** `walls/cat-wall.jpeg`, on both the desktop and the lock screen.
+- **Terminal:** Ghostty is the default terminal, so Dolphin's "Open Terminal" uses it.
+- **GTK apps:** KDE's GTK bridge is restarted so GTK apps pick up the accent straight away.
+
+### Shortcuts
+
+`kde/shortcuts.py` sets these through KDE's shortcut service, so they work immediately. Run `python3 kde/shortcuts.py --check` to see whether anything differs.
+
+| Keys | Action |
+|---|---|
+| `Meta+1` … `Meta+6` | Switch to desktop 1–6 (`Ctrl+F1`–`F4` keep working) |
+| `Meta+Shift+1` … `Meta+Shift+6` | Move the window to desktop 1–6 |
+| `Meta+Return` | New Ghostty window |
+| `Meta+Shift+Q` | Close the window (`Alt+F4` too) |
+| `Meta+F` | Maximize |
+| `Meta+Shift+F` | Fullscreen |
+
+Plasma's own shortcuts are unchanged. For example: `Meta+W` (Overview), `Meta+V` (clipboard), `Meta+.` (emoji), `Meta+Shift+Print` (screenshot of an area), `Ctrl+Meta+←/→` (next or previous desktop), and `Meta`+drag to move a window.
+
+### Panel
+
+The panel layout is not copied: Plasma stores it with IDs that belong to one machine, and restoring it elsewhere can break the panel. The installer installs the two widgets the panel uses, in `kde/plasmoids/`:
+
+- **Desktops:** a minimal desktop switcher showing numbers, with the current one in a soft pill; scroll over it to switch desktops.
+- **RAM Indicator:** a slim memory bar that turns blue, green, yellow and then red as usage rises.
+
+Set the panel up once by hand:
+
+1. Right-click the panel and choose **Show Panel Configuration**: bottom, floating, 38 px.
+2. Choose **Add Widgets**. From left to right, add: Digital Clock, Application Launcher, Icons-only Task Manager, **Desktops**, Margins Separator, **RAM Indicator**, System Tray, Show Desktop.
+3. Clock settings: JetBrainsMono Nerd Font 12, seconds always, 24-hour, and a custom date `ddd d MMM` beside the time.
+
+## System tweaks (`--system`)
+
+These are in `system/` and are applied only with `--system`. Any file that differs is copied to `*.bak-<timestamp>` first.
+
+- **zram:** `system/zram-generator.conf` makes compressed swap in RAM as large as the RAM, with zstd compression and the highest priority. A swap file is not created.
+- **Swap settings:** `system/sysctl.d/99-desktop-memory.conf` sets `swappiness=180` and `page-cluster=0` (the right values for zram), adjusts the memory watermarks, and limits pending disk writes to 256 MB / 1 GB.
+- **MGLRU:** `system/tmpfiles.d/mglru-min-ttl.conf` keeps the last second of each app's working memory from being swapped out. When RAM truly runs out, the kernel closes the largest app instead of freezing the desktop.
+- **File index:** `/etc/updatedb.conf` gets `PRUNENAMES`, so `plocate` skips `.git`, `node_modules`, `target`, `.venv` and `__pycache__`.
+- **dnf:** `/etc/dnf/dnf.conf` gets `max_parallel_downloads=10`.
+- **Login screen:** Plasma Login Manager shows `walls/cat-wall.jpeg` too.
+
+## Terminals and shell
+
+- **Ghostty** (`ghostty/config.ghostty`):
+  - Gruvbox Dark Hard, JetBrains Mono 13 with no ligatures;
+  - no title bar (move windows with `Meta`+drag), no padding, no scrollbar;
+  - a cursor trail drawn by `ghostty/shaders/cursor_trail.glsl`. Adjust `DURATION` and `OPACITY` at the top of that file.
+- **Alacritty:** the same Gruvbox Dark Hard colours, kept as a spare terminal.
+- **tmux:** the prefix is `Ctrl+Space`, with `Ctrl+A` as a second prefix; press either twice to pass it to the program in the pane. The status bar uses stock Gruvbox Dark Hard, and the session chip turns from yellow to purple while the prefix is active.
+- **Zsh:** Oh My Zsh with the `git` plugin, plus a Starship prompt: `user | dir | git | duration | jobs | time`, separated by grey pipes.
+  - Aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`; `pstat` prints permissions; `suup` upgrades DNF and Flatpak.
 
 ## Machine-specific shell settings
 
@@ -48,83 +121,48 @@ Every install replaces `~/.zshrc`. Keep `PATH` entries, toolchain managers such 
 
 ## NVIDIA and Secure Boot
 
-The normal install detects NVIDIA hardware. When present, it enables RPM Fusion, installs the open-compatible Fedora NVIDIA akmod packages, builds the module and installs `sway/environment`. On other hardware, the NVIDIA environment file is skipped.
+When the normal install detects NVIDIA hardware, it enables RPM Fusion, installs the NVIDIA akmod packages and builds the module.
 
-With Secure Boot enabled, the akmods certificate may need to be enrolled once before the driver can load:
+With Secure Boot enabled, you may need to enrol the akmods certificate once before the driver can load:
 
 ```bash
 sudo kmodgenca -a
 sudo mokutil --import /etc/pki/akmods/certs/public_key.der
 ```
 
-Choose a one-time password, reboot, select **Enroll MOK**, and enter that password. Then allow the akmod build to finish before rebooting again:
+Choose a one-time password, reboot, select **Enroll MOK**, and enter that password. Then let the akmod build finish before rebooting again:
 
 ```bash
 sudo akmods --force
 modinfo -F version nvidia
 ```
 
-## Machine-specific display layout
-
-This setup mirrors the current two-monitor machine:
-
-- `HDMI-A-1` is the main BenQ display and is the only display with the bar.
-- `HDMI-A-2` is placed to its left.
-- Workspaces 1–8 open on the BenQ; 9–10 open on the second display.
-
-If connector names differ, inspect them with `swaymsg -t get_outputs` and update `sway/config` and `quickshell/shell.qml`.
-
-## Key details
-
-- Sway: 1 px subtle active border, 4 px inner and 1 px outer gaps, 20 px tab titles.
-- Calculator, the Bluetooth manager and the network connection editor open floating. Firefox Picture-in-Picture floats on every workspace.
-- `Super+Tab` switches windows: every open window, most recently used first, with the previous one selected. Hold Super and press Tab again to go further back; letting go switches. Type to search, `Ctrl+W` closes the selected window.
-- Night light: wlsunset warms the screen to 4000 K from 18:30 to 06:30, fading over half an hour. Change the times in `sway/config` and `scripts/nightlight`.
-- Bar: Quickshell, configured in `quickshell/` and started by `sway/config.d/90-bar.conf`, which replaces Fedora's Waybar launcher. Bottom, 26 px, seconds visible, square workspace indicators; RAM turns Gruvbox red above 80%. Quickshell reloads by itself when its files change; the installer restarts it.
-  - Panels open above what you click and close with Escape or a click elsewhere: the clock shows a month calendar with the ISO week; volume picks the output device and sets output, microphone and per-application volume (right-click mutes, scroll changes it); network shows addresses, DNS and live download/upload; CPU and RAM show each core, memory, swap, temperature, load and the busiest processes.
-  - Media: the current MPRIS track (Firefox, Telegram, Spotify…); click for cover art, a seek bar and controls, right-click to play or pause.
-  - The moon toggles the night light. The cup keeps the screen awake while it is purple. Tray menus open on right-click.
-  - A volume overlay appears above the bar whenever the volume changes, including from the media keys.
-- Launcher: `Super+D`, or the Fedora logo at the left of the bar, searches apps and shell commands together (switch window, clipboard, keyboard shortcuts, wallpaper, Do Not Disturb, night light, stay awake, screenshots, color picker, lock, suspend, log out, reboot, shut down, reload Sway). Apps you start most come first; matching uses prefixes, word starts, initials (`vsc`) and letters in order. `→` opens an app's own actions, such as a private window. Arithmetic like `2*(3+4)` shows the answer and Enter copies it; when nothing matches, Enter runs the text as a shell command. Log out, Reboot and Shut down open the power menu to confirm.
-- Keyboard shortcuts: type "shortcuts" in the launcher, or right-click the Fedora logo, for every Sway binding in plain words, read from the live config so it never goes stale. Search by key or action; Enter does it.
-- Wallpaper: Quickshell draws it on every display and cross-fades when it changes; pick one with "wallpaper" in the launcher from `~/walls` or `~/Pictures/Wallpapers`. The choice, and the launcher's app counts, are kept in `~/.local/state/quickshell/dotfiles.json`. Sway's own `output * bg` stays underneath for when Quickshell is not running.
-- Polkit: Quickshell asks for the administrator password when an app needs it (pkexec, Boxes, Disks…), showing the command and the polkit action. `sway/config.d/95-autostart-policykit-agent.conf` stops Fedora's lxqt agent, since only one agent can run.
-- First start: a one-time notification points at `Super+D` and the shortcut list.
-- Rofi: the fallback for `Super+D`, `Super+Tab` and `Super+Shift+V` when Quickshell is not running; eight rows with the original width and font.
-- Power menu: the bar's power button opens Lock, Log out, Suspend, Reboot and Shut down. Arrow keys or `h`/`l` move, Enter picks, and the underlined letter picks directly.
-- Lock screen: Quickshell over `walls/burning-earth.png`, checked against swaylock's PAM configuration. `Super+Escape` locks, as does swayidle after 5 minutes and before sleep (`sway/config.d/90-swayidle.conf`). When Quickshell is not running, `scripts/lock-screen` uses swaylock with the same wallpaper instead. If the lock screen ever stops responding, switch to a console with `Ctrl+Alt+F3`, log in and run `WAYLAND_DISPLAY=wayland-1 swaylock`, then switch back and unlock there.
-- Notifications: drawn by Quickshell. Popups appear top-right on the BenQ for 5 s (low urgency) or 10 s, or until dismissed when critical; hovering keeps them, a click runs the default action and a middle-click dismisses. The bell counts them; `Super+N` or a click on it opens the notification center with Do Not Disturb and Clear. Right-click the bell for Do Not Disturb.
-- Clipboard: `Super+Shift+V` opens the history with the selected entry shown in full on the right, images as pictures. Enter copies it again, `Shift+Del` forgets it, `Ctrl+Shift+Del` twice clears everything. Persistent user services collect new copies.
-- Screenshots: `Super+Shift+S` selects an area and copies it to the clipboard. Cancelling selection or failing to capture leaves the clipboard untouched.
-- tmux prefix: `Ctrl+Space`, with `Ctrl+A` as a second prefix; press either twice to pass it to the program in the pane. The session chip changes from yellow to purple while the prefix is active.
-- Special Sway mode: `Super+Z`, then `c` copies a picked color, `s` copies a selected screenshot, `Shift+s` saves a selected area, and `a` saves an output screenshot. Saved screenshots go to `~/Pictures/Screenshots`.
-- Cinnamon: when Cinnamon is installed, the installer loads `cinnamon/keybindings.dconf`, which gives it the Sway keys where Cinnamon has an equivalent: `Super+Return` Alacritty, `Super+D` rofi, `Super+Shift+Q` close, `Super+1`–`0` and `Super+Shift+1`–`0` for ten workspaces, `Super+H/J/K/L` or arrows snap windows, `Super+F` fullscreen, `Super+R` resize, `Super+Tab` switch windows, `Super+Shift+S` area screenshot to the clipboard, `Super+Escape` lock, `Super+Shift+E` log out, and Super+drag moves windows. Show desktop moves to `Ctrl+Super+D`. The window list's own `Super+1`–`9` and `Super+Shift+1`–`9` app shortcuts are turned off and the sound applet's `Super+Shift+S` is cleared, since they took those keys from the workspace and screenshot bindings. `Super+N` opens Cinnamon's notifications. Key repeat matches Sway: 200 ms delay, 40 per second. A RAM applet (`cinnamon/applets/ram@dotfiles`) sits left of the network icon: memory use in percent, red from 81% as on the Sway bar, memory and swap in the tooltip, and a click opens System Monitor. Clipboard history: the GPaste Reloaded applet (GPL-3, copied from linuxmint/cinnamon-spices-applets at 8057b77, without its translations) sits right of RAM and needs the `gpaste` package; `Super+Shift+V` opens it, moved from its default `Super+H`. Cinnamon has to be started after `gpaste` is installed, so the installer leaves the applet out until then. Look: `cinnamon/themes/Matcha-dark-gruvbox` is Matcha-dark-pueril (GPL-3, from vinceliuice/Matcha-gtk-theme) recoloured to Gruvbox hard dark — `#1d2021` background and `#ebdbb2` text, with Gruvbox aqua in place of Matcha's green. The panel is a shade darker, `#17191a`, to match Alacritty's background. Shapes and spacing are Matcha's. The installer copies it to `~/.themes` and `cinnamon/appearance.dconf` selects it for applications, window borders and the panel, with Inter as the interface font. To rebuild it, for example with another accent, put Matcha-dark-pueril in `~/.themes` and run `cinnamon/make-matcha-gruvbox.py [aqua|yellow|orange|green]`. The previous Cinnamon settings are saved in the backup folder as `cinnamon.dconf`, with `gnome-interface.dconf` and `nemo-desktop.dconf` for the GTK theme and font keys outside Cinnamon.
-- GNOME Terminal: when it is installed, the installer loads `gnome-terminal/profile.dconf` into its default profile: Alacritty's `#17191a` background, `#f4e3b2` text, JetBrainsMono Nerd Font Mono 12, no menu bar and no scrollbar. The previous settings are saved in the backup folder as `gnome-terminal.dconf`.
-- Shell aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`, `pstat` prints permissions, and `suup` upgrades DNF and Flatpak. `ls` and `cat` stay stock.
-
-The original `sve`, `tux`, `chaos`, and `orbit` wallpapers were removed. `wall.png`, `wall-gruvbox.png`, `wallg.png`, `wallg-gruvbox.png`, and `burning-earth.png` remain. `wall.png` and `wallg.png` are recoloured to gruvbox-charcoal: a `#17191a` background, neutral greys and `#f2e8cf` cream, with gruvbox blue kept; `wall-gruvbox.png` and `wallg-gruvbox.png` are the gruvbox originals.
-
 ## Editors
 
-- Neovim: transparent Gruvbox, one shared status line, upright comments, Treesitter highlighting for JavaScript, TypeScript/TSX, Go, Rust, Zig, Lua, C and C++. Language servers include `ts_ls`, `gopls`, `rust_analyzer`, `zls`, `lua_ls` and `clangd`; Mason installs the servers.
-- Vim: `vim/vimrc` installs to `~/.vimrc`. Uses Vim's built-in Retrobox theme, transparent gutters, relative line numbers and a small status line, with no additional plugins. Yank and paste share the Wayland clipboard through `wl-clipboard`, as they do in Neovim.
+- **Neovim:**
+  - transparent Gruvbox, one shared status line and upright comments;
+  - Treesitter highlighting for JavaScript, TypeScript/TSX, Go, Rust, Zig, Lua, C and C++;
+  - language servers `ts_ls`, `gopls`, `rust_analyzer`, `zls`, `lua_ls` and `clangd`, installed by Mason.
+- **Vim:** `vim/vimrc` installs to `~/.vimrc`.
+  - Vim's built-in Retrobox theme, transparent gutters, relative line numbers and a small status line, with no extra plugins.
+  - Yank and paste use the Wayland clipboard through `wl-clipboard`, as they do in Neovim.
 
-The normal installer supplies and checks the core editor prerequisites. With `--files-only`, install those prerequisites separately and verify them with `./scripts/check-editor-deps`. Install the Go, Rust and Zig toolchains for the languages you use. Keep Zig and ZLS release versions aligned; this setup was checked with both at 0.16.0.
-
-## Firefox
-
-`firefox/userChrome.css` restyles Firefox's own toolbars: a charcoal palette, 3–6 px corners, a 28 px tab strip and address bar, and 14 px icons. Websites are not affected. It was written against Firefox 157 and depends on that version's toolbar design, so a later Firefox release may need the file updated.
-
-The installer copies it into the profile Firefox opens by default, together with a one-line `user.js` that tells Firefox to load it. The profile is read from the `[Install…]` entry of `profiles.ini` under `~/.mozilla/firefox` or `~/.config/mozilla/firefox`. Existing copies of both files are backed up first; `user.js` is replaced, not merged. Firefox creates its profile on first start, so on a machine where it has never run the theme is skipped; start Firefox once and run the installer again. Restart Firefox to see changes.
-
-The theme forces dark toolbars. For the new tab and settings pages to match, enable Firefox's built-in Dark theme once under **Add-ons and themes**.
+The normal installer installs and checks the core editor prerequisites. With `--files-only`, install them yourself and check them with `./scripts/check-editor-deps`. Install the Go, Rust and Zig toolchains for the languages you use. Keep Zig and ZLS on matching release versions; this setup was checked with both at 0.16.0.
 
 ## Verification
 
-Run the regression checks from the repository root:
+Run the checks from the repository root:
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-The checks cover screenshot cancellation/capture errors and save locations, editor prerequisite versions, wallpaper/backup preservation across two installs with the same timestamp, the Firefox theme reaching the default profile with backups (and being skipped when there is no profile), session service setup inside and outside Sway, and, when Node.js is installed, the launcher's search ranking and calculator and the shortcut list's reading of `sway/config`. Screenshot commands are mocked so the tests do not touch your clipboard. The installer checks use a temporary home directory and run only on Fedora as a non-root user. `sudo`, `systemctl`, `gsettings` and downloads are mocked there, so real package installation, service startup and NVIDIA setup are not exercised.
+They check:
+
+- **Editor prerequisites:** the version checks.
+- **Installer:** two installs into a temporary home within the same second. Files arrive in place, Ghostty gets the shader's full path, and each run's backups survive.
+- **System tweaks:** applied twice into a temporary root with `sudo` mocked. Each tweak is added only once, and the original files are kept.
+- **Folder icons:** the theme is built from real files (no links), and an unknown colour is refused.
+- **Shortcuts:** key codes match Qt's.
+
+The installer and system checks need Fedora and a non-root user. Live KDE changes are not tested here, but `python3 kde/shortcuts.py --check` compares the shortcuts against a running session.

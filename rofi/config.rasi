@@ -1,7 +1,0 @@
-
-@theme "/usr/share/rofi/themes/gruvbox-dark-hard.rasi"
-
-/* Shorter launcher; retain the original width and typography. */
-listview {
-    lines: 8;
-}

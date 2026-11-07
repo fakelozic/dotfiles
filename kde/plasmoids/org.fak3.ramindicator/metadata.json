@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Id": "org.fak3.ramindicator",
+        "Name": "RAM Indicator",
+        "Description": "Slim memory bar that goes blue, green, yellow, red as usage rises",
+        "Icon": "memory",
+        "Category": "System Information",
+        "Authors": [ { "Name": "fak3" } ],
+        "License": "GPL-2.0-or-later",
+        "Version": "1.0"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

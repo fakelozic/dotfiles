@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Builds a personal Papirus-Dark variant whose folders use another Papirus
+# colour. Usage: build-folder-icons [colour] [icons-dir]
+#   colour     a Papirus folder colour (default: bluegrey)
+#   icons-dir  where to create the theme (default: ~/.local/share/icons)
+# The icons are copied, not symlinked: Flatpak apps see ~/.local/share/icons
+# but not /usr/share/icons, so links into /usr/share would break there.
+set -Eeuo pipefail
+
+colour="${1:-bluegrey}"
+icons_dir="${2:-${HOME}/.local/share/icons}"
+papirus=/usr/share/icons/Papirus
+papirus_dark=/usr/share/icons/Papirus-Dark
+name="Papirus-Dark-${colour^}"
+theme="${icons_dir}/${name}"
+
+if [[ ! -f ${papirus_dark}/index.theme ]]; then
+  printf 'Papirus is not installed (sudo dnf install papirus-icon-theme).\n' >&2
+  exit 1
+fi
+if ! compgen -G "${papirus}/48x48/places/folder-${colour}.svg" >/dev/null; then
+  printf 'Papirus has no "%s" folder colour.\n' "$colour" >&2
+  exit 1
+fi
+
+rm -rf -- "$theme"
+mkdir -p -- "$theme"
+sed -e "s/^Name=.*/Name=${name}/" \
+    -e 's/^Inherits=.*/Inherits=Papirus-Dark,breeze-dark,hicolor/' \
+    "${papirus_dark}/index.theme" > "${theme}/index.theme"
+
+# Papirus points each generic folder icon (folder.svg, folder-documents.svg,
+# user-home.svg...) at its blue variant. Point the same names at the chosen colour.
+# Some size directories (the @2x ones, for example) are links themselves, so
+# each one is walked through its own path.
+count=0
+for places in "$papirus"/*/places/; do
+  size="$(basename -- "$(dirname -- "$places")")"
+  while IFS= read -r -d '' link; do
+    target="$(readlink -- "$link")"
+    coloured="${places}${target/-blue/-${colour}}"
+    [[ -e $coloured ]] || continue
+    install -Dm0644 -- "$(readlink -f -- "$coloured")" "${theme}/${size}/places/$(basename -- "$link")"
+    count=$((count + 1))
+  done < <(find "$places" -maxdepth 1 -type l -lname '*-blue*' -print0)
+done
+
+gtk-update-icon-cache -q -f -t "$theme" 2>/dev/null || true
+printf '%s: %d folder icons\n' "$name" "$count"
