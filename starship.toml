@@ -4,7 +4,7 @@
 # - plain text only, no Nerd Font icons, so nothing goes blank when pasted;
 # - anything colour says is also written out (exit codes, counts), because
 #   colour is lost on paste;
-# - one line, kept short: only the current folder, no toolchain versions;
+# - one line, kept short: three folders deep, no toolchain versions;
 
 add_newline = false
 
@@ -39,13 +39,12 @@ format = '[$user]($style)'
 style = "fg:color_orange bold"
 format = "[@$hostname]($style)"
 
-# Only the current folder's name (~ at home).
+# The last three folders; inside a git repo, counted from the repo's folder.
 [directory]
 style = "fg:color_blue bold"
-format = " [|](fg:color_gray) [$path]($style)[$read_only]($read_only_style) "
-truncation_length = 1
-truncation_symbol = ""
-truncate_to_repo = false
+format = " [$path]($style)[$read_only]($read_only_style) "
+truncation_length = 3
+truncation_symbol = ".../"
 read_only = " (read-only)"
 read_only_style = "fg:color_red"
 

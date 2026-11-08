@@ -1,6 +1,6 @@
 # A small native Oh My Zsh prompt using the Gruvbox Dark palette.
 # It mirrors starship.toml for machines without Starship:
-#   fak3 | lsbtw | git:main !1 ?1 (+22 -1) | 47s | exit 1 | jobs 1 | 01:40:14 ❯
+#   fak3 .../lsbtw | git:main !1 ?1 (+22 -1) | 47s | exit 1 | jobs 1 | 01:40:14 ❯
 # Plain text only (no Nerd Font icons), so the prompt reads the same when pasted.
 
 setopt prompt_subst
@@ -20,8 +20,25 @@ typeset -g GRUVBOX_USER_HOST="%B%F{${GRUVBOX_ORANGE}}%n"
 [[ -n ${SSH_CONNECTION:-} ]] && GRUVBOX_USER_HOST+="@%m"
 GRUVBOX_USER_HOST+='%f%b'
 
-# Only the current folder's name (~ at home).
-typeset -g GRUVBOX_DIR="%B%F{${GRUVBOX_BLUE}}%1~%f%b"
+typeset -g GRUVBOX_DIR=''
+
+# The last three folders; inside a git repo, counted from the repo's folder
+# (.../lsbtw, .../dotfiles/kde/plasmoids), like Starship's truncate_to_repo.
+_gruvbox_dir() {
+  local top p
+  top=$(command git rev-parse --show-toplevel 2>/dev/null)
+  if [[ -n $top && $top != $HOME && $top != / && $PWD == $top* ]]; then
+    local -a parts
+    parts=(${top:t} ${(s:/:)${PWD#$top}})
+    (( ${#parts} > 3 )) && parts=(${parts[-3,-1]})
+    p=".../${(j:/:)parts}"
+    p=${p//\%/%%}
+  else
+    p='%(4~|.../%3~|%~)'
+  fi
+  GRUVBOX_DIR="%B%F{${GRUVBOX_BLUE}}${p}%f%b"
+  [[ -w $PWD ]] || GRUVBOX_DIR+="%F{${GRUVBOX_RED}} (read-only)%f"
+}
 
 typeset -g _gruvbox_cmd_start=''
 typeset -g GRUVBOX_GIT='' GRUVBOX_LAST=''
@@ -111,6 +128,7 @@ _gruvbox_precmd() {
   fi
   _gruvbox_cmd_start=''
   GRUVBOX_LAST+='%f'
+  _gruvbox_dir
   _gruvbox_git
 }
 
@@ -118,5 +136,5 @@ autoload -Uz add-zsh-hook
 add-zsh-hook preexec _gruvbox_preexec
 add-zsh-hook precmd _gruvbox_precmd
 
-PROMPT='${GRUVBOX_USER_HOST} %F{$GRUVBOX_GRAY}|%f ${GRUVBOX_DIR} ${GRUVBOX_GIT}${GRUVBOX_LAST}%1(j.%F{$GRUVBOX_GRAY}| %B%F{$GRUVBOX_RED}jobs %j%b%f .)%F{$GRUVBOX_GRAY}| %D{%H:%M:%S}%f %B%(?.%F{$GRUVBOX_GREEN}.%F{$GRUVBOX_RED})❯%f%b '
+PROMPT='${GRUVBOX_USER_HOST} ${GRUVBOX_DIR} ${GRUVBOX_GIT}${GRUVBOX_LAST}%1(j.%F{$GRUVBOX_GRAY}| %B%F{$GRUVBOX_RED}jobs %j%b%f .)%F{$GRUVBOX_GRAY}| %D{%H:%M:%S}%f %B%(?.%F{$GRUVBOX_GREEN}.%F{$GRUVBOX_RED})❯%f%b '
 RPROMPT=''
