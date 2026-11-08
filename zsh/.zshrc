@@ -11,9 +11,6 @@ plugins=(git)
 source "$ZSH/oh-my-zsh.sh"
 
 (( $+commands[starship] )) && eval "$(starship init zsh)"
-# Drop the right-hand prompt (command duration) once a command runs, so copied
-# terminal text has no long run of spaces and a stray "3s" at the end.
-setopt transient_rprompt
 
 alias ezl="eza -lahg --icons --group-directories-first"
 alias ezo="eza -lahgo --icons --group-directories-first"

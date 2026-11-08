@@ -2,10 +2,7 @@
 
 add_newline = false
 
-format = "$username$hostname$directory$git_branch$git_status$nodejs$rust$golang$python$docker_context$jobs$time$character"
-
-# Command duration sits alone at the far right of the prompt line.
-right_format = "$cmd_duration"
+format = "$username$hostname$directory$git_branch$git_status$nodejs$rust$golang$python$docker_context$cmd_duration$jobs$time$character"
 
 palette = 'gruvbox_dark'
 
@@ -99,7 +96,7 @@ vicmd_symbol = "[󰄼](bold fg:color_yellow)"
 [cmd_duration]
 min_time = 2000
 style = "fg:color_yellow"
-format = "[$duration]($style)"
+format = "[|](fg:color_gray) [$duration]($style) "
 
 [jobs]
 number_threshold = 1
