@@ -113,7 +113,7 @@ These are in `system/` and are applied only with `--system`. Any file that diffe
 - **Alacritty:** the same Gruvbox Dark Hard colours, kept as a spare terminal.
 - **tmux:** the prefix is `Ctrl+Space`, with `Ctrl+A` as a second prefix; press either twice to pass it to the program in the pane. The status bar uses stock Gruvbox Dark Hard, and the session chip turns from yellow to purple while the prefix is active.
 - **fastfetch:** `fastfetch/config.jsonc` shows a Fedora logo in Gruvbox blue next to three sections (system, desktop, hardware), with Nerd Font icons and Gruvbox key colours. Run `fastfetch`.
-- **Zsh:** Oh My Zsh with the `git` plugin, plus a Starship prompt: `user | dir | git | jobs | time`, separated by grey pipes, with a command's duration (2 s or longer) at the far right.
+- **Zsh:** Oh My Zsh with the `git` plugin, plus a Starship prompt: `user | dir | git | jobs | time`, separated by grey pipes, with a command's duration (2 s or longer) at the far right. The duration disappears once you run the next command, so text copied from the terminal stays clean.
   - Aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`; `pstat` prints permissions; `suup` upgrades DNF and Flatpak.
 
 ## Machine-specific shell settings
