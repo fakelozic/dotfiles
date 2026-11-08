@@ -1,6 +1,6 @@
 # A small native Oh My Zsh prompt using the Gruvbox Dark palette.
 # It mirrors starship.toml for machines without Starship:
-#   fak3 | …/c/lsbtw | git:main !1 ?1 (+22 -1) | 47s | exit 1 | jobs 1 | 01:40:14 ❯
+#   fak3 | lsbtw | git:main !1 ?1 (+22 -1) | 47s | exit 1 | jobs 1 | 01:40:14 ❯
 # Plain text only (no Nerd Font icons), so the prompt reads the same when pasted.
 
 setopt prompt_subst
@@ -20,11 +20,10 @@ typeset -g GRUVBOX_USER_HOST="%B%F{${GRUVBOX_ORANGE}}%n"
 [[ -n ${SSH_CONNECTION:-} ]] && GRUVBOX_USER_HOST+="@%m"
 GRUVBOX_USER_HOST+='%f%b'
 
-# The last two folders, counted from ~.
-typeset -g GRUVBOX_DIR="%B%F{${GRUVBOX_BLUE}}%(3~|…/%2~|%~)%f%b"
+# Only the current folder's name (~ at home).
+typeset -g GRUVBOX_DIR="%B%F{${GRUVBOX_BLUE}}%1~%f%b"
 
 typeset -g _gruvbox_cmd_start=''
-typeset -gi _gruvbox_drawn=0
 typeset -g GRUVBOX_GIT='' GRUVBOX_LAST=''
 
 _gruvbox_preexec() { _gruvbox_cmd_start=$EPOCHREALTIME }
@@ -94,8 +93,6 @@ _gruvbox_git() {
 # Duration (2 s or longer), exit code and background jobs of the last command.
 _gruvbox_precmd() {
   local -i code=$?
-  # A blank line before every prompt but the first, like Starship's add_newline.
-  if (( _gruvbox_drawn )); then print; else _gruvbox_drawn=1; fi
   GRUVBOX_LAST=''
   if [[ -n $_gruvbox_cmd_start ]]; then
     local -i secs=$(( EPOCHREALTIME - _gruvbox_cmd_start ))

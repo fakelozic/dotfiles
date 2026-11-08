@@ -4,10 +4,9 @@
 # - plain text only, no Nerd Font icons, so nothing goes blank when pasted;
 # - anything colour says is also written out (exit codes, counts), because
 #   colour is lost on paste;
-# - one line, kept short: two folders deep, no toolchain versions;
-# - a blank line before each prompt separates one command's output from the next.
+# - one line, kept short: only the current folder, no toolchain versions;
 
-add_newline = true
+add_newline = false
 
 format = """
 $username$hostname$directory$git_branch$git_commit$git_state$git_status$git_metrics\
@@ -40,12 +39,12 @@ format = '[$user]($style)'
 style = "fg:color_orange bold"
 format = "[@$hostname]($style)"
 
-# The last two folders, counted from ~ even inside a repo (~/dotfiles, not …/dotfiles).
+# Only the current folder's name (~ at home).
 [directory]
 style = "fg:color_blue bold"
 format = " [|](fg:color_gray) [$path]($style)[$read_only]($read_only_style) "
-truncation_length = 2
-truncation_symbol = "…/"
+truncation_length = 1
+truncation_symbol = ""
 truncate_to_repo = false
 read_only = " (read-only)"
 read_only_style = "fg:color_red"

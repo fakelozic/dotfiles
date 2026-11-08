@@ -116,14 +116,13 @@ These are in `system/` and are applied only with `--system`. Any file that diffe
 - **Zsh:** Oh My Zsh with the `git` plugin, plus a one-line Starship prompt separated by grey pipes:
 
   ```text
-  fak3 | …/c/lsbtw | git:main !1 ?1 (+22 -1) | 47s | exit 1 | jobs 1 | 01:40:14 ❯
+  fak3 | lsbtw | git:main !1 ?1 (+22 -1) | 47s | exit 1 | jobs 1 | 01:40:14 ❯
   ```
 
   - It uses plain characters only, no Nerd Font icons, so it reads the same when pasted into a chat or an AI tool. Anything colour shows is also written as text, such as `exit 1` for a failed command.
-  - The folder shows its last two levels, counted from `~`. The host appears after the user only over SSH.
+  - The folder shows only its own name (`~` at home). The host appears after the user only over SSH.
   - The git counts are `!` modified, `+` staged, `?` untracked, `-` deleted, `»` renamed, `=` conflicted, `$` stashes and `↑`/`↓` commits to push or pull. `(+22 -1)` counts lines added and removed since the last commit. A detached HEAD shows as `detached <hash>`, and a rebase or merge in progress as `(REBASING 2/5)`.
   - The duration appears for commands that take 2 s or longer, the exit code only after a failure (`exit 130 INT` for Ctrl+C), and the job count only while jobs run.
-  - A blank line separates each prompt from the previous command's output.
   - Aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`; `pstat` prints permissions; `suup` upgrades DNF and Flatpak.
 
 ## Machine-specific shell settings
