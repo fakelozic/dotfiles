@@ -1,8 +1,17 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
-add_newline = false
+# A prompt for reading back and pasting (to people or AI agents):
+# - plain text only, no Nerd Font icons, so nothing goes blank when pasted;
+# - anything colour says is also written out (exit codes, counts), because
+#   colour is lost on paste;
+# - one line, kept short: two folders deep, no toolchain versions;
+# - a blank line before each prompt separates one command's output from the next.
 
-format = "$username$hostname$directory$git_branch$git_status$nodejs$rust$golang$python$docker_context$cmd_duration$jobs$time$character"
+add_newline = true
+
+format = """
+$username$hostname$directory$git_branch$git_commit$git_state$git_status$git_metrics\
+$cmd_duration$status$jobs$time $character"""
 
 palette = 'gruvbox_dark'
 
@@ -20,86 +29,98 @@ color_red = '#fb4934'
 color_yellow = '#fabd2f'
 color_gray = '#928374'
 
-# [os]
-# disabled = false
-# style = "fg:color_fg0"
-# format = "[$symbol]($style)"
-#
-# [os.symbols]
-# Ubuntu = " "
-# Linux = " "
-# Arch = "󰣇 "
-# Fedora = "󰣛 "
-# Debian = "󰣚 "
-
 [username]
 show_always = true
 style_user = "fg:color_orange bold"
 style_root = "fg:color_red bold"
 format = '[$user]($style)'
 
+# Only over SSH.
 [hostname]
 style = "fg:color_orange bold"
 format = "[@$hostname]($style)"
 
+# The last two folders, counted from ~ even inside a repo (~/dotfiles, not …/dotfiles).
 [directory]
 style = "fg:color_blue bold"
-format = " [|](fg:color_gray) [$path]($style) "
-truncation_length = 3
+format = " [|](fg:color_gray) [$path]($style)[$read_only]($read_only_style) "
+truncation_length = 2
 truncation_symbol = "…/"
+truncate_to_repo = false
+read_only = " (read-only)"
+read_only_style = "fg:color_red"
+
+# --- git: branch, then what is waiting to be committed -----------------------
 
 [git_branch]
-symbol = " "
+symbol = "git:"
+only_attached = true
 style = "fg:color_aqua bold"
 format = "[|](fg:color_gray) [$symbol$branch]($style) "
 
+# Only when no branch is checked out (detached HEAD): the commit or tag.
+[git_commit]
+style = "fg:color_aqua bold"
+tag_disabled = false
+tag_symbol = " tag:"
+format = '[|](fg:color_gray) [detached $hash$tag]($style) '
+
+# Only in the middle of a rebase, merge, cherry-pick or bisect.
+[git_state]
+style = "fg:color_yellow bold"
+format = '[\($state( $progress_current/$progress_total)\)]($style) '
+
+# With counts, each kind in its own colour, so "3 files changed" survives a paste: !modified ?untracked
+# +staged -deleted »renamed =conflicts $stashes ↑ahead ↓behind.
 [git_status]
 style = "fg:color_red bold"
-format = '[$all_status$ahead_behind]($style) '
+format = '([$all_status$ahead_behind]($style))'
+modified = "[!${count}](fg:color_yellow) "
+untracked = "[?${count}](fg:color_gray) "
+staged = "[+${count}](fg:color_green) "
+deleted = "[-${count}](fg:color_red) "
+renamed = "[»${count}](fg:color_purple) "
+conflicted = "[=${count}](fg:color_red) "
+stashed = "[\\$${count}](fg:color_purple) "
+ahead = "[↑${count}](fg:color_blue) "
+behind = "[↓${count}](fg:color_blue) "
+diverged = "[↑${ahead_count}↓${behind_count}](fg:color_purple) "
 
-[nodejs]
-symbol = " "
-style = "fg:color_green bold"
-format = "[|](fg:color_gray) [$symbol($version )]($style)"
-
-[rust]
-symbol = " "
-style = "fg:color_orange bold"
-format = "[|](fg:color_gray) [$symbol($version )]($style)"
-
-[golang]
-symbol = " "
-style = "fg:color_blue bold"
-format = "[|](fg:color_gray) [$symbol($version )]($style)"
-
-[python]
-symbol = " "
-style = "fg:color_yellow bold"
-format = "[|](fg:color_gray) [$symbol($version )]($style)"
-
-[docker_context]
-symbol = " "
-style = "fg:color_blue bold"
-format = "[|](fg:color_gray) [$symbol$context]($style) "
-
-[time]
+# Lines added and removed since the last commit: shows how much an agent
+# (or you) has changed at a glance.
+[git_metrics]
 disabled = false
-time_format = "%R"
-style = "fg:color_gray"
-format = '[| $time]($style) '
+added_style = "fg:color_green"
+deleted_style = "fg:color_red"
+format = '([\(](fg:color_gray)([+$added]($added_style))( [-$deleted]($deleted_style))[\)](fg:color_gray) )'
 
-[character]
-success_symbol = "[󰄾](bold fg:color_green)"
-error_symbol = "[󰄾](bold fg:color_red)"
-vicmd_symbol = "[󰄼](bold fg:color_yellow)"
+# --- how the last command went -----------------------------------------------
 
 [cmd_duration]
 min_time = 2000
 style = "fg:color_yellow"
 format = "[|](fg:color_gray) [$duration]($style) "
 
+# "exit 1", or "exit 130 INT" after Ctrl+C. Hidden when the command succeeded.
+[status]
+disabled = false
+style = "fg:color_red bold"
+format = "[|](fg:color_gray) [exit $status( $signal_name)]($style) "
+
 [jobs]
 number_threshold = 1
-symbol = " "
+symbol = ""
 style = "fg:color_red bold"
-format = "[|](fg:color_gray) [$symbol$number]($style) "
+format = "[|](fg:color_gray) [jobs $number]($style) "
+
+# With seconds, to match timestamps in logs.
+[time]
+disabled = false
+time_format = "%T"
+style = "fg:color_gray"
+format = '[| $time]($style)'
+
+[character]
+success_symbol = "[❯](bold fg:color_green)"
+error_symbol = "[❯](bold fg:color_red)"
+vimcmd_symbol = "[❮](bold fg:color_yellow)"
