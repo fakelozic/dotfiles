@@ -28,6 +28,7 @@ trap cleanup EXIT
 
 files_only=0
 skip_nvidia=0
+nvidia_installed=0
 skip_shell_change=0
 skip_reload=0
 skip_kde=0
@@ -173,7 +174,9 @@ install_dev_tools() {
   (cd -- "$target_home" && "${bin}/mise" install --yes)
 
   # These use their own installers and update themselves.
-  run_installer Bun "${target_home}/.bun/bin/bun" https://bun.sh/install bash
+  # Bun adds itself to the current shell's startup file; as zsh that is ~/.zshrc,
+  # which the dotfiles replace, instead of ~/.bash_profile, which they keep.
+  run_installer Bun "${target_home}/.bun/bin/bun" https://bun.sh/install env SHELL=/usr/bin/zsh bash
   run_installer nub "${target_home}/.nub/bin/nub" https://nubjs.com/install.sh env NUB_NO_MODIFY_PATH=1 bash
   run_installer opencode "${target_home}/.opencode/bin/opencode" https://opencode.ai/v2/install bash -s -- --no-modify-path
   run_installer 'Claude Code' "${bin}/claude" https://claude.ai/install.sh bash
@@ -201,6 +204,7 @@ install_nvidia_if_needed() {
     "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm" \
     "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
   sudo dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda libva-nvidia-driver
+  nvidia_installed=1
   sudo akmods --force
 }
 
@@ -543,7 +547,7 @@ reload_session
 printf '\nDone. Your previous configuration is in:\n  %s\n' "$backup_root"
 printf 'Open new Ghostty windows to see terminal changes. Some KDE changes need a new login.\n'
 
-if ((!files_only && !skip_nvidia)) && command -v mokutil >/dev/null 2>&1 \
+if ((nvidia_installed)) && command -v mokutil >/dev/null 2>&1 \
   && mokutil --sb-state 2>/dev/null | grep -qi enabled; then
   printf '\nSecure Boot is enabled. If the NVIDIA module does not load after reboot,\n'
   printf 'enroll the akmods signing certificate as described in README.md.\n'
