@@ -2,6 +2,10 @@
 
 This repository recreates my Fedora KDE Plasma setup. It mixes Windows and Sway: windows float and you switch apps from the taskbar, but there are six separate workspaces driven from the keyboard. The desktop uses Breeze Charcoal colours with a steel-blue accent taken from the wallpaper, bluegrey Papirus folders and the Inter font. The terminals and editors use stock Gruvbox Dark Hard with JetBrains Mono and no ligatures.
 
+![Plasma desktop with the bottom panel and a Ghostty window showing the Starship prompt](screenshot.webp)
+
+<sub>A fresh Fedora 45 install after running `install.sh`.</sub>
+
 ## Install on Fedora
 
 From a fresh Fedora KDE installation:
