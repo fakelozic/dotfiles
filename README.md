@@ -43,7 +43,9 @@ Then it installs the developer tools:
 | Claude Code | its installer, `claude.ai/install.sh` | itself |
 | Rust | rustup, `sh.rustup.rs` | `rustup update` |
 
-mise itself comes from its installer, `mise.run`, into `~/.local/bin`. Tools that are already installed are left alone. The installers never edit your shell files; their `PATH` entries are in `zsh/.zshrc.local`. All tools are always the latest release, so unlike the Nerd Font below they are not pinned to a checksum.
+mise itself comes from its installer, `mise.run`, into `~/.local/bin`.
+
+`devup` updates them in one go: `mise self-update`, `mise upgrade` (the global tools only), `bun upgrade`, `nub upgrade`, `rustup update`, and Starship when GitHub has a newer release (its installer asks for sudo, since Starship lives in `/usr/local/bin`). It lists anything that failed at the end. Claude Code and opencode also update themselves, and T3 Code keeps its own providers current. Tools that are already installed are left alone. The installers never edit your shell files; their `PATH` entries are in `zsh/.zshrc.local`. All tools are always the latest release, so unlike the Nerd Font below they are not pinned to a checksum.
 
 It also installs JetBrainsMono Nerd Font and Oh My Zsh, and makes Zsh your login shell. Before replacing any configuration it checks for Neovim 0.12.0 or later and `tree-sitter-cli` 0.26.1 or later.
 
@@ -137,7 +139,7 @@ These are in `system/` and are applied only with `--system`. Any file that diffe
   - The folder shows its last three levels. Inside a git repo they are counted from the repo's folder, so `~/developer/c/lsbtw` shows as `.../lsbtw`. The host appears after the user only over SSH.
   - The git counts are `!` modified, `+` staged, `?` untracked, `-` deleted, `»` renamed, `=` conflicted, `$` stashes and `↑`/`↓` commits to push or pull. `(+22 -1)` counts lines added and removed since the last commit. A detached HEAD shows as `detached <hash>`, and a rebase or merge in progress as `(REBASING 2/5)`.
   - The duration appears for commands that take 2 s or longer, the exit code only after a failure (`exit 130 INT` for Ctrl+C), and the job count only while jobs run.
-  - Aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`; `pstat` prints permissions; `suup` upgrades DNF and Flatpak.
+  - Aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`; `pstat` prints permissions; `suup` upgrades DNF and Flatpak; `devup` updates the developer tools that dnf doesn't manage (see below).
 
 ## Shell setup for the developer tools
 
