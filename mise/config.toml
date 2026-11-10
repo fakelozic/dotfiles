@@ -6,5 +6,9 @@ go = "latest"
 neovim = "latest"
 node = "latest"
 pnpm = "latest"
+zig = "latest"
+# The Zig language server, for Neovim. ZLS can trail a new Zig release by a few
+# weeks; projects that need a matching pair can pin both in their own mise.toml.
+zls = "latest"
 # codex comes from npm, through mise's Node.
 "npm:@openai/codex" = "latest"

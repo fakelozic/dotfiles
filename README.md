@@ -35,7 +35,7 @@ Then it installs the developer tools:
 
 | Tool | Installed by | Updated with |
 |---|---|---|
-| Go, Node.js (with npm), pnpm, GitHub CLI (`gh`), Neovim | [mise](https://mise.jdx.dev), from `mise/config.toml` | `mise upgrade` |
+| Go, Node.js (with npm), pnpm, GitHub CLI (`gh`), Neovim, Zig and ZLS | [mise](https://mise.jdx.dev), from `mise/config.toml` | `mise upgrade` |
 | codex | mise, from npm (`npm:@openai/codex`) | `mise upgrade` |
 | Bun | its installer, `bun.sh/install` | `bun upgrade` |
 | nub | its installer, `nubjs.com/install.sh` | itself |
@@ -172,12 +172,12 @@ modinfo -F version nvidia
 - **Neovim:**
   - transparent Gruvbox, one shared status line and upright comments;
   - Treesitter highlighting for JavaScript, TypeScript/TSX, Go, Rust, Zig, Lua, C and C++;
-  - language servers `ts_ls`, `gopls`, `rust_analyzer`, `zls`, `lua_ls` and `clangd`, installed by Mason.
+  - language servers `ts_ls`, `gopls`, `rust_analyzer`, `lua_ls` and `clangd`, installed by Mason, plus `zls` from mise so it can follow each project's Zig version.
 - **Vim:** `vim/vimrc` installs to `~/.vimrc`.
   - Vim's built-in Retrobox theme, transparent gutters, relative line numbers and a small status line, with no extra plugins.
   - Yank and paste use the Wayland clipboard through `wl-clipboard`, as they do in Neovim.
 
-The normal installer installs and checks the core editor prerequisites, with Neovim and Node.js from mise. With `--files-only`, install them yourself and check them with `./scripts/check-editor-deps`. Go and Rust come with the developer tools; install Zig yourself if you use it. Keep Zig and ZLS on matching release versions; this setup was checked with both at 0.16.0.
+The normal installer installs and checks the core editor prerequisites, with Neovim and Node.js from mise. With `--files-only`, install them yourself and check them with `./scripts/check-editor-deps`. Go, Rust, Zig and ZLS come with the developer tools. Zig and ZLS both track their latest release, and a new Zig can come out a few weeks before the matching ZLS; a project that needs a matching pair can pin both in its own `mise.toml`, for example `zig = "0.17"` and `zls = "0.17"`.
 
 ## Verification
 
