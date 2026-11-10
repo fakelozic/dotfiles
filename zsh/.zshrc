@@ -60,8 +60,8 @@ function devup() {
     rustup update || failed+=(rust)
   fi
   if (( $+commands[starship] )); then
-    # Starship lives in /usr/local/bin, so its installer asks for sudo; only run
-    # it when GitHub has a newer release.
+    # Only reinstall when GitHub has a newer release. The installer writes to the
+    # folder Starship is already in, asking for sudo if that is /usr/local/bin.
     print -P '\n%B==> starship%b'
     current=${${(z)"$(starship --version)"}[2]}
     latest=$(curl -fsSL https://api.github.com/repos/starship/starship/releases/latest \
@@ -72,7 +72,8 @@ function devup() {
     elif [[ $current == $latest ]]; then
       print -- "starship $current is the latest release."
     else
-      curl -fsSL https://starship.rs/install.sh | sh -s -- --yes || failed+=(starship)
+      curl -fsSL https://starship.rs/install.sh \
+        | sh -s -- --yes --bin-dir "${$(command -v starship):h}" || failed+=(starship)
     fi
   fi
 

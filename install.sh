@@ -32,6 +32,7 @@ nvidia_installed=0
 skip_shell_change=0
 skip_reload=0
 skip_kde=0
+skip_update=0
 with_system=0
 
 usage() {
@@ -42,6 +43,7 @@ Options:
   --files-only         Install dotfiles only; skip packages, developer tools,
                        downloads, the login shell and KDE settings.
   --skip-kde           Copy the KDE files but do not change Plasma's settings.
+  --skip-update        Do not install pending Fedora updates first.
   --system             Also apply the system tweaks in system/ (uses sudo): zram and
                        swap settings, MGLRU, plocate exclusions, parallel dnf
                        downloads and the login screen wallpaper.
@@ -58,6 +60,7 @@ while (($#)); do
   case "$1" in
     --files-only) files_only=1 ;;
     --skip-kde) skip_kde=1 ;;
+    --skip-update) skip_update=1 ;;
     --system) with_system=1 ;;
     --skip-nvidia) skip_nvidia=1 ;;
     --skip-shell-change) skip_shell_change=1 ;;
@@ -87,6 +90,7 @@ required_files=(
   ghostty/shaders/cursor_trail.glsl
   kde/BreezeCharcoal.colors
   kde/build-folder-icons
+  kde/panel.js
   kde/plasmoids/org.fak3.desktops/metadata.json
   kde/plasmoids/org.fak3.ramindicator/metadata.json
   kde/shortcuts.py
@@ -111,6 +115,43 @@ for relative_path in "${required_files[@]}"; do
     exit 1
   fi
 done
+
+# Installs pending Fedora updates before anything else. If there were any, offers
+# to reboot and stops; running the installer again after the reboot continues.
+update_system() {
+  local status=0 answer=""
+  printf 'Checking for Fedora updates...\n'
+  sudo dnf check-upgrade --refresh --quiet >/dev/null 2>&1 || status=$?
+  case $status in
+    0)
+      printf 'Fedora is up to date.\n'
+      return
+      ;;
+    100) ;;
+    *)
+      printf 'Could not check for updates (dnf exit status %s); continuing.\n' "$status" >&2
+      return
+      ;;
+  esac
+
+  # One upgrade can make more updates available, so repeat until none are left.
+  local round
+  for round in 1 2 3; do
+    printf 'Installing Fedora updates (round %s)...\n' "$round"
+    sudo dnf upgrade -y --refresh
+    status=0
+    sudo dnf check-upgrade --refresh --quiet >/dev/null 2>&1 || status=$?
+    ((status == 100)) || break
+  done
+  printf '\nUpdates are installed. Reboot, then run ./install.sh again to continue.\n'
+  if [[ -t 0 ]]; then
+    read -r -p 'Reboot now? [y/N] ' answer
+    if [[ $answer == [yY]* ]]; then
+      sudo systemctl reboot
+    fi
+  fi
+  exit 0
+}
 
 install_packages() {
   local packages=(
@@ -181,6 +222,12 @@ install_dev_tools() {
   run_installer opencode "${target_home}/.opencode/bin/opencode" https://opencode.ai/v2/install bash -s -- --no-modify-path
   run_installer 'Claude Code' "${bin}/claude" https://claude.ai/install.sh bash
   run_installer Rust "${target_home}/.cargo/bin/rustup" https://sh.rustup.rs sh -s -- -y --no-modify-path
+  # Starship draws the prompt. Any existing copy counts, wherever it lives.
+  if command -v starship >/dev/null 2>&1; then
+    printf 'Starship is already installed.\n'
+  else
+    run_installer Starship "${bin}/starship" https://starship.rs/install.sh sh -s -- --yes --bin-dir "$bin"
+  fi
 
   # The rest of this script (the editor check) needs them on PATH.
   export PATH="${data_root}/mise/shims:${bin}:${target_home}/.cargo/bin:${PATH}"
@@ -436,6 +483,12 @@ configure_kde() {
   # Sway-style keys: Meta+1-6, Meta+Shift+1-6, Meta+Shift+Q, Meta+F, Meta+Return.
   python3 "${repo_root}/kde/shortcuts.py" || printf 'Could not apply the shortcuts; continuing.\n' >&2
 
+  # The panel: clock, launcher, pinned apps, Desktops, RAM indicator, tray.
+  # kde/panel.js builds it only once and leaves an existing setup alone.
+  busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s \
+    "$(<"${repo_root}/kde/panel.js")" | sed -n 's/^s "\(.*\)"$/\1/p' \
+    || printf 'Could not build the panel; continuing.\n' >&2
+
   # KDE's GTK bridge writes GTK's colours only when it starts, so restart it to
   # give GTK apps the new accent.
   busctl --user call org.kde.kded6 /kded org.kde.kded6 unloadModule s gtkconfig >/dev/null 2>&1 || true
@@ -523,6 +576,9 @@ reload_session() {
 }
 
 if ((!files_only)); then
+  if ((!skip_update)); then
+    update_system
+  fi
   install_packages
   install_dev_tools
   "${repo_root}/scripts/check-editor-deps"

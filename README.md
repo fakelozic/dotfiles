@@ -15,6 +15,8 @@ cd ~/dotfiles
 
 Run it from inside a Plasma session so it can apply the KDE settings. From anywhere else it installs the files and tells you to run it again inside Plasma.
 
+The first run on a fresh install only installs Fedora's pending updates, then offers to reboot. Run `./install.sh` again after the reboot to do the rest. The installation media ships the release packages, and Plasma 6.8.1, for example, draws the panel clock larger than its configured size; 6.8.2 fixes that.
+
 The script is safe to run again. Before writing anything, it copies the existing files to:
 
 ```text
@@ -42,6 +44,7 @@ Then it installs the developer tools:
 | opencode | its installer, `opencode.ai/v2/install` | `opencode upgrade` |
 | Claude Code | its installer, `claude.ai/install.sh` | itself |
 | Rust | rustup, `sh.rustup.rs` | `rustup update` |
+| Starship | its installer, `starship.rs/install.sh`, into `~/.local/bin` | `devup` |
 
 mise itself comes from its installer, `mise.run`, into `~/.local/bin`.
 
@@ -49,13 +52,14 @@ mise itself comes from its installer, `mise.run`, into `~/.local/bin`.
 
 It also installs JetBrainsMono Nerd Font and Oh My Zsh, and makes Zsh your login shell. Before replacing any configuration it checks for Neovim 0.12.0 or later and `tree-sitter-cli` 0.26.1 or later.
 
-Starship is not in Fedora's repositories, so the installer only copies `starship.toml`. Install Starship yourself with `curl -sS https://starship.rs/install.sh | sh`. Until it's installed, the bundled Gruvbox Oh My Zsh theme draws a nearly identical prompt.
+Starship is skipped when it is already installed anywhere on `PATH`. If it is ever missing, the bundled Gruvbox Oh My Zsh theme draws the same prompt.
 
 Installer options:
 
 ```bash
 ./install.sh --files-only         # only copy files: no packages, tools, login shell or KDE settings
 ./install.sh --skip-kde           # copy the KDE files but leave Plasma's settings alone
+./install.sh --skip-update        # do not install pending Fedora updates first
 ./install.sh --system             # also apply system/ (asks for sudo)
 ./install.sh --skip-nvidia
 ./install.sh --skip-shell-change
@@ -98,16 +102,17 @@ Plasma's own shortcuts are unchanged. For example: `Meta+W` (Overview), `Meta+V`
 
 ### Panel
 
-The panel layout is not copied: Plasma stores it with IDs that belong to one machine, and restoring it elsewhere can break the panel. The installer installs the two widgets the panel uses, in `kde/plasmoids/`:
+The installer builds the panel with `kde/panel.js`, a Plasma script, the first time it runs inside Plasma. It replaces Fedora's default panel with a floating, translucent 38 px bar at the bottom holding, from left to right:
 
-- **Desktops:** a minimal desktop switcher showing numbers, with the current one in a soft pill; scroll over it to switch desktops.
-- **RAM Indicator:** a slim memory bar that turns blue, green, yellow and then red as usage rises.
+- **Digital Clock:** JetBrainsMono Nerd Font 12, seconds always, 24-hour, and the date as `ddd d MMM` beside the time;
+- **Application Launcher**, with a plain circle icon;
+- **Icons-only Task Manager**, with your pinned apps (only the ones that are installed);
+- **Desktops** (`kde/plasmoids/org.fak3.desktops`): a minimal desktop switcher showing numbers, with the current one in a soft pill; scroll over it to switch desktops;
+- **Margins Separator**;
+- **RAM Indicator** (`kde/plasmoids/org.fak3.ramindicator`): a slim memory bar that turns blue, green, yellow and then red as usage rises;
+- **System Tray** and **Show Desktop**.
 
-Set the panel up once by hand:
-
-1. Right-click the panel and choose **Show Panel Configuration**: bottom, floating, 38 px.
-2. Choose **Add Widgets**. From left to right, add: Digital Clock, Application Launcher, Icons-only Task Manager, **Desktops**, Margins Separator, **RAM Indicator**, System Tray, Show Desktop.
-3. Clock settings: JetBrainsMono Nerd Font 12, seconds always, 24-hour, and a custom date `ddd d MMM` beside the time.
+Once a panel holds the Desktops widget, later runs leave the panel alone, so changes you make afterwards are kept. To rebuild it, remove that panel and run the installer again.
 
 ## System tweaks (`--system`)
 
