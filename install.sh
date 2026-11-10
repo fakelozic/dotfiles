@@ -38,8 +38,8 @@ usage() {
 Usage: ./install.sh [options]
 
 Options:
-  --files-only         Install dotfiles only; skip packages, downloads, the login
-                       shell and KDE settings.
+  --files-only         Install dotfiles only; skip packages, developer tools,
+                       downloads, the login shell and KDE settings.
   --skip-kde           Copy the KDE files but do not change Plasma's settings.
   --system             Also apply the system tweaks in system/ (uses sudo): zram and
                        swap settings, MGLRU, plocate exclusions, parallel dnf
@@ -89,6 +89,7 @@ required_files=(
   kde/plasmoids/org.fak3.desktops/metadata.json
   kde/plasmoids/org.fak3.ramindicator/metadata.json
   kde/shortcuts.py
+  mise/config.toml
   scripts/check-editor-deps
   starship.toml
   system/sysctl.d/99-desktop-memory.conf
@@ -99,6 +100,7 @@ required_files=(
   vim/vimrc
   walls/cat-wall.jpeg
   zsh/.zshrc
+  zsh/.zshrc.local
   zsh/themes/gruvbox.zsh-theme
 )
 
@@ -123,9 +125,6 @@ install_packages() {
     ghostty
     git-core
     make
-    neovim
-    nodejs
-    npm
     papirus-icon-theme
     pciutils
     python3-dbus
@@ -148,6 +147,40 @@ install_packages() {
   fi
   printf 'Installing Fedora packages...\n'
   sudo dnf install -y "${packages[@]}"
+}
+
+# Runs a tool's official install script, unless the tool is already installed
+# (each of them updates itself afterwards).
+run_installer() {
+  local name="$1" installed="$2" url="$3"
+  shift 3
+  if [[ -x $installed ]]; then
+    printf '%s is already installed.\n' "$name"
+    return
+  fi
+  printf 'Installing %s...\n' "$name"
+  curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "$url" | "$@"
+}
+
+install_dev_tools() {
+  local bin="${target_home}/.local/bin"
+
+  # mise installs the global tools in mise/config.toml: Go, Node, pnpm, gh,
+  # Neovim, and codex from npm. The file itself is copied with the dotfiles below.
+  run_installer mise "${bin}/mise" https://mise.run sh
+  printf 'Installing the mise tools...\n'
+  export MISE_GLOBAL_CONFIG_FILE="${repo_root}/mise/config.toml"
+  (cd -- "$target_home" && "${bin}/mise" install --yes)
+
+  # These use their own installers and update themselves.
+  run_installer Bun "${target_home}/.bun/bin/bun" https://bun.sh/install bash
+  run_installer nub "${target_home}/.nub/bin/nub" https://nubjs.com/install.sh env NUB_NO_MODIFY_PATH=1 bash
+  run_installer opencode "${target_home}/.opencode/bin/opencode" https://opencode.ai/v2/install bash -s -- --no-modify-path
+  run_installer 'Claude Code' "${bin}/claude" https://claude.ai/install.sh bash
+  run_installer Rust "${target_home}/.cargo/bin/rustup" https://sh.rustup.rs sh -s -- -y --no-modify-path
+
+  # The rest of this script (the editor check) needs them on PATH.
+  export PATH="${data_root}/mise/shims:${bin}:${target_home}/.cargo/bin:${PATH}"
 }
 
 install_nvidia_if_needed() {
@@ -237,6 +270,7 @@ install_dotfiles() {
     "${config_root}/alacritty"
     "${config_root}/fastfetch"
     "${config_root}/fontconfig/fonts.conf"
+    "${config_root}/mise/config.toml"
     "${config_root}/ghostty/config.ghostty"
     "${config_root}/ghostty/shaders/cursor_trail.glsl"
     "${config_root}/nvim"
@@ -247,6 +281,7 @@ install_dotfiles() {
     "${data_root}/plasma/plasmoids/org.fak3.ramindicator"
     "${target_home}/.vimrc"
     "${target_home}/.zshrc"
+    "${target_home}/.zshrc.local"
     "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
     "${target_home}/walls/cat-wall.jpeg"
   )
@@ -275,6 +310,8 @@ install_dotfiles() {
   install_file "${repo_root}/tmux/gruvbox-theme.conf" "${config_root}/tmux/gruvbox-theme.conf"
   install_file "${repo_root}/vim/vimrc" "${target_home}/.vimrc"
   install_file "${repo_root}/zsh/.zshrc" "${target_home}/.zshrc"
+  install_file "${repo_root}/zsh/.zshrc.local" "${target_home}/.zshrc.local"
+  install_file "${repo_root}/mise/config.toml" "${config_root}/mise/config.toml"
   install_file "${repo_root}/zsh/themes/gruvbox.zsh-theme" "${target_home}/.oh-my-zsh/custom/themes/gruvbox.zsh-theme"
   install_file "${repo_root}/kde/BreezeCharcoal.colors" "${data_root}/color-schemes/BreezeCharcoal.colors"
 
@@ -483,6 +520,7 @@ reload_session() {
 
 if ((!files_only)); then
   install_packages
+  install_dev_tools
   "${repo_root}/scripts/check-editor-deps"
   install_nvidia_if_needed
   install_nerd_font

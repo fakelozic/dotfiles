@@ -1,0 +1,10 @@
+# Global tools, installed by `mise install` (install.sh runs it).
+# Projects can pin their own versions in a mise.toml of their own.
+[tools]
+gh = "latest"
+go = "latest"
+neovim = "latest"
+node = "latest"
+pnpm = "latest"
+# codex comes from npm, through mise's Node.
+"npm:@openai/codex" = "latest"

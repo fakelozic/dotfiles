@@ -102,6 +102,12 @@ class InstallTests(unittest.TestCase):
 
             # Files reach their places.
             self.assertIn('source "$HOME/.zshrc.local"', (target / ".zshrc").read_text())
+            # The tool PATH entries and the global mise tools come with the dotfiles,
+            # and ARGV0 is cleared before mise starts.
+            local = (target / ".zshrc.local").read_text()
+            self.assertLess(local.index("unset ARGV0"), local.index("mise activate zsh"))
+            self.assertEqual((target / ".config/mise/config.toml").read_bytes(),
+                             (REPO / "mise/config.toml").read_bytes())
             self.assertEqual((target / ".config/nvim/.stylua.toml").read_bytes(),
                              (REPO / "nvim/.stylua.toml").read_bytes())
             self.assertEqual((target / "walls/cat-wall.jpeg").read_bytes(),

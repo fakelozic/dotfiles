@@ -1,0 +1,35 @@
+# Sourced last by ~/.zshrc: PATH entries for tools installed outside dnf.
+# This file is in a public repository, so never put keys or tokens here.
+
+# aliases
+alias gopomo="$HOME/go-pomodoro"
+# claude: personal = default config, work = separate dir
+alias claude-p='env -u CLAUDE_CONFIG_DIR claude'
+alias claude-w='CLAUDE_CONFIG_DIR=$HOME/.claude-work claude'
+
+# Native installers: Claude Code and mise live in ~/.local/bin.
+export PATH="$HOME/.local/bin:$PATH"
+
+# rust (rustup)
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+[ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
+
+# nub
+export PATH="$HOME/.nub/bin:$PATH"
+
+# opencode (updates itself with `opencode upgrade`)
+export PATH="$HOME/.opencode/bin:$PATH"
+
+# go: Go itself comes from mise; this is where `go install` puts tools.
+export PATH="$PATH:$HOME/go/bin"
+
+# AppImages (like T3 Code) export ARGV0. In zsh that renames every program the
+# shell starts, so mise thinks it is a shim called "T3-Code.AppImage" and fails.
+unset ARGV0
+
+# mise: go, node, pnpm, gh, neovim and codex (see ~/.config/mise/config.toml).
+(( $+commands[mise] )) && eval "$(mise activate zsh)"

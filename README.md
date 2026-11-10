@@ -26,10 +26,24 @@ That includes the KDE config files it changes (`kdeglobals`, `kwinrc`, `kglobals
 It installs the Fedora packages the configuration uses:
 
 - Ghostty, from the `scottames/ghostty` COPR repository;
-- Alacritty, tmux, Zsh, Neovim and Vim;
+- Alacritty, tmux, Zsh and Vim;
 - `ripgrep`, `eza`, `bat`, `fd`, `fastfetch` and `wl-clipboard`;
 - Papirus icons, Breeze cursors and the Inter font;
-- the C compiler, `make`, `unzip`, `tree-sitter-cli`, Node.js and npm that the editor setup needs.
+- the C compiler, `make`, `unzip` and `tree-sitter-cli` that the editor setup needs.
+
+Then it installs the developer tools:
+
+| Tool | Installed by | Updated with |
+|---|---|---|
+| Go, Node.js (with npm), pnpm, GitHub CLI (`gh`), Neovim | [mise](https://mise.jdx.dev), from `mise/config.toml` | `mise upgrade` |
+| codex | mise, from npm (`npm:@openai/codex`) | `mise upgrade` |
+| Bun | its installer, `bun.sh/install` | `bun upgrade` |
+| nub | its installer, `nubjs.com/install.sh` | itself |
+| opencode | its installer, `opencode.ai/v2/install` | `opencode upgrade` |
+| Claude Code | its installer, `claude.ai/install.sh` | itself |
+| Rust | rustup, `sh.rustup.rs` | `rustup update` |
+
+mise itself comes from its installer, `mise.run`, into `~/.local/bin`. Tools that are already installed are left alone. The installers never edit your shell files; their `PATH` entries are in `zsh/.zshrc.local`. All tools are always the latest release, so unlike the Nerd Font below they are not pinned to a checksum.
 
 It also installs JetBrainsMono Nerd Font and Oh My Zsh, and makes Zsh your login shell. Before replacing any configuration it checks for Neovim 0.12.0 or later and `tree-sitter-cli` 0.26.1 or later.
 
@@ -38,7 +52,7 @@ Starship is not in Fedora's repositories, so the installer only copies `starship
 Installer options:
 
 ```bash
-./install.sh --files-only         # only copy files: no packages, login shell or KDE settings
+./install.sh --files-only         # only copy files: no packages, tools, login shell or KDE settings
 ./install.sh --skip-kde           # copy the KDE files but leave Plasma's settings alone
 ./install.sh --system             # also apply system/ (asks for sudo)
 ./install.sh --skip-nvidia
@@ -125,9 +139,13 @@ These are in `system/` and are applied only with `--system`. Any file that diffe
   - The duration appears for commands that take 2 s or longer, the exit code only after a failure (`exit 130 INT` for Ctrl+C), and the job count only while jobs run.
   - Aliases: `ezl`, `ezo`, `ezg` and `ezt` list files with `eza`; `pstat` prints permissions; `suup` upgrades DNF and Flatpak.
 
-## Machine-specific shell settings
+## Shell setup for the developer tools
 
-Every install replaces `~/.zshrc`. Keep `PATH` entries, toolchain managers such as mise or SDKMAN, and private aliases in `~/.zshrc.local`. The installed `.zshrc` sources that file last, and the installer never writes to it.
+`zsh/.zshrc.local` installs to `~/.zshrc.local`, and `.zshrc` sources it last. It holds the `PATH` entries for the tools above, a few aliases, and the line that starts mise.
+
+- It runs `unset ARGV0` before mise. AppImages such as T3 Code export `ARGV0`, and zsh then hands that name to every program it starts, so mise would think it was a shim and fail. Apps that read your shell's `PATH` (T3 Code, editors) would then miss every mise tool.
+- Every install replaces both files, after backing them up. The repository is public, so keep keys and tokens out of `.zshrc.local`.
+- Projects can pin their own tool versions in their own `mise.toml`; the global ones in `~/.config/mise/config.toml` apply everywhere else.
 
 ## NVIDIA and Secure Boot
 
@@ -157,7 +175,7 @@ modinfo -F version nvidia
   - Vim's built-in Retrobox theme, transparent gutters, relative line numbers and a small status line, with no extra plugins.
   - Yank and paste use the Wayland clipboard through `wl-clipboard`, as they do in Neovim.
 
-The normal installer installs and checks the core editor prerequisites. With `--files-only`, install them yourself and check them with `./scripts/check-editor-deps`. Install the Go, Rust and Zig toolchains for the languages you use. Keep Zig and ZLS on matching release versions; this setup was checked with both at 0.16.0.
+The normal installer installs and checks the core editor prerequisites, with Neovim and Node.js from mise. With `--files-only`, install them yourself and check them with `./scripts/check-editor-deps`. Go and Rust come with the developer tools; install Zig yourself if you use it. Keep Zig and ZLS on matching release versions; this setup was checked with both at 0.16.0.
 
 ## Verification
 
