@@ -4,6 +4,7 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.components as PlasmaComponents
 import org.kde.kirigami as Kirigami
 import org.kde.ksysguard.sensors as Sensors
+import org.kde.ksysguard.process as Process
 
 PlasmoidItem {
     id: root
@@ -33,6 +34,82 @@ PlasmoidItem {
         return stops[stops.length - 1].color;
     }
 
+    // ---- Memory per app, for the popup ----
+    // Polling every process is not free, so the model only runs while the popup is open,
+    // or while the pointer is on the bar so that it is warm by the time the click lands.
+    property bool hovered: false
+    readonly property bool watching: expanded || hovered
+    property double watchingSince: 0
+    // After a pause the model first repeats its previous reading; the list is drawn dimmed until a new one arrives.
+    property bool appsFresh: false
+    property real appsKib: 0                    // sum of the listed apps
+    readonly property real minAppKib: 10 * 1024 // smaller apps are left to "everything else"
+
+    ListModel { id: appList }                   // name, icon, kib; largest first
+
+    Process.ApplicationDataModel {
+        id: appModel
+        enabled: root.watching
+        enabledAttributes: ["appName", "iconName", "memory"]
+        onDataChanged: {
+            if (root.watching && Date.now() - root.watchingSince > 1000) root.appsFresh = true;
+            collect.start();
+        }
+        onRowsInserted: collect.start()
+        onRowsRemoved: collect.start()
+        onModelReset: collect.start()
+    }
+    Timer { id: collect; interval: 200; onTriggered: if (root.watching) root.collectApps() }
+
+    onWatchingChanged: {
+        if (watching) {
+            watchingSince = Date.now();
+            collectApps();
+        } else {
+            appsFresh = false;
+        }
+    }
+
+    function collectApps() {
+        const value = Process.ProcessDataModel.Value;
+        const rows = [];
+        for (let r = 0; r < appModel.rowCount(); r++) {
+            rows.push({
+                name: String(appModel.data(appModel.index(r, 0), value) || ""),
+                icon: String(appModel.data(appModel.index(r, 1), value) || ""),
+                kib: Number(appModel.data(appModel.index(r, 2), value)) || 0
+            });
+        }
+
+        // One app can own several rows, and two kinds of helper group have no app name of their own:
+        // "surface" is whatever runs inside Ghostty's terminals, "agents-…" are agents started by T3 Code.
+        const t3 = rows.find(a => a.name.startsWith("T3 Code"));
+        const merged = new Map();
+        for (const a of rows) {
+            let name = a.name;
+            if (name === "surface") name = "Ghostty";
+            else if (/^agents-[0-9a-f]+$/.test(name)) name = t3 ? t3.name : "T3 Code";
+            const seen = merged.get(name);
+            if (seen) {
+                seen.kib += a.kib;
+                if (!seen.icon) seen.icon = a.icon;
+            } else {
+                merged.set(name, { name: name, icon: a.icon, kib: a.kib });
+            }
+        }
+        const list = Array.from(merged.values()).filter(a => a.kib >= minAppKib).sort((a, b) => b.kib - a.kib);
+
+        // Update the rows in place, so the popup does not rebuild itself on every reading.
+        let sum = 0;
+        for (let i = 0; i < list.length; i++) {
+            sum += list[i].kib;
+            if (i < appList.count) appList.set(i, list[i]);
+            else appList.append(list[i]);
+        }
+        while (appList.count > list.length) appList.remove(appList.count - 1);
+        appsKib = sum;
+    }
+
     preferredRepresentation: compactRepresentation
     toolTipMainText: "Memory " + Math.round(usage) + "%"
     toolTipSubText: used.formattedValue + " of " + total.formattedValue + " used"
@@ -41,6 +118,7 @@ PlasmoidItem {
         Layout.minimumWidth: row.implicitWidth + Kirigami.Units.smallSpacing * 2
         Layout.preferredWidth: Layout.minimumWidth
         hoverEnabled: true
+        onContainsMouseChanged: root.hovered = containsMouse
         onClicked: root.expanded = !root.expanded
 
         RowLayout {
@@ -79,14 +157,13 @@ PlasmoidItem {
         }
     }
 
-    fullRepresentation: ColumnLayout {
-        Layout.minimumWidth: Kirigami.Units.gridUnit * 10
-        PlasmaComponents.Label {
-            text: "Memory"
-            font.bold: true
-        }
-        PlasmaComponents.Label {
-            text: used.formattedValue + " of " + total.formattedValue + " used (" + Math.round(root.usage) + "%)"
-        }
+    fullRepresentation: MemoryPopup {
+        usage: root.usage
+        barColor: root.levelColor(root.usage)
+        summary: used.formattedValue + " of " + total.formattedValue + " used"
+        usedKib: (Number(used.value) || 0) / 1024
+        apps: appList
+        appsKib: root.appsKib
+        fresh: root.appsFresh
     }
 }

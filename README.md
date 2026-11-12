@@ -115,7 +115,7 @@ The installer builds the panel with `kde/panel.js`, a Plasma script, the first t
 - **Icons-only Task Manager**, with your pinned apps (only the ones that are installed);
 - **Desktops** (`kde/plasmoids/org.fak3.desktops`): a minimal desktop switcher showing numbers, with the current one in a soft pill; scroll over it to switch desktops;
 - **Margins Separator**;
-- **RAM Indicator** (`kde/plasmoids/org.fak3.ramindicator`): a slim memory bar that turns blue, green, yellow and then red as usage rises;
+- **RAM Indicator** (`kde/plasmoids/org.fak3.ramindicator`): a slim memory bar that turns blue, green, yellow and then red as usage rises; click it to see memory per app, largest first;
 - **System Tray** and **Show Desktop**.
 
 Once a panel holds the Desktops widget, later runs leave the panel alone, so changes you make afterwards are kept. To rebuild it, remove that panel and run the installer again.
