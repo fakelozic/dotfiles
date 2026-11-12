@@ -39,38 +39,35 @@ PlasmoidItem {
     // or while the pointer is on the bar so that it is warm by the time the click lands.
     property bool hovered: false
     readonly property bool watching: expanded || hovered
-    property double watchingSince: 0
-    // After a pause the model first repeats its previous reading; the list is drawn dimmed until a new one arrives.
+    // Until the new model has its first reading, the previous list stays up, drawn dimmed.
     property bool appsFresh: false
     property real appsKib: 0                    // sum of the listed apps
     readonly property real minAppKib: 10 * 1024 // smaller apps are left to "everything else"
 
     ListModel { id: appList }                   // name, icon, kib; largest first
 
-    Process.ApplicationDataModel {
-        id: appModel
-        enabled: root.watching
-        enabledAttributes: ["appName", "iconName", "memory"]
-        onDataChanged: {
-            if (root.watching && Date.now() - root.watchingSince > 1000) root.appsFresh = true;
-            collect.start();
+    // A new model is built each time watching starts and destroyed when it stops.
+    // A paused model (enabled: false) cannot be used: if an app closes and opens again
+    // while it is paused, the new instance never shows up (ksysguard bug, seen with Zen).
+    Instantiator {
+        id: appModels
+        active: root.watching
+        delegate: Process.ApplicationDataModel {
+            enabled: true
+            enabledAttributes: ["appName", "iconName", "memory"]
+            onDataChanged: collect.start()
+            onRowsInserted: collect.start()
+            onRowsRemoved: collect.start()
+            onModelReset: collect.start()
         }
-        onRowsInserted: collect.start()
-        onRowsRemoved: collect.start()
-        onModelReset: collect.start()
     }
     Timer { id: collect; interval: 200; onTriggered: if (root.watching) root.collectApps() }
 
-    onWatchingChanged: {
-        if (watching) {
-            watchingSince = Date.now();
-            collectApps();
-        } else {
-            appsFresh = false;
-        }
-    }
+    onWatchingChanged: if (!watching) appsFresh = false
 
     function collectApps() {
+        const appModel = appModels.object;
+        if (!appModel) return;
         const value = Process.ProcessDataModel.Value;
         const rows = [];
         for (let r = 0; r < appModel.rowCount(); r++) {
@@ -80,6 +77,8 @@ PlasmoidItem {
                 kib: Number(appModel.data(appModel.index(r, 2), value)) || 0
             });
         }
+        if (!rows.some(a => a.kib > 0)) return;  // no reading yet: keep the previous list
+        appsFresh = true;
 
         // One app can own several rows, and two kinds of helper group have no app name of their own:
         // "surface" is whatever runs inside Ghostty's terminals, "agents-…" are agents started by T3 Code.
